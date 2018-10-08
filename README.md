@@ -19,7 +19,7 @@ To run the code in the [demo](demo) directory, we provide a [Binder](https://myb
 
 The Jupyter notebooks in the [demo](demo) directory are hosted on Binder, which provides an interactive user interface for executing Jupyter notebooks. Click the link provided below for access:
 
-[![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/UK-Digital-Heart-Project/4DSurv/master)
+[![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/UK-Digital-Heart-Project/4Dsurvival/master)
 
 
 ## 2. Installation/Usage Guide for Docker Image
