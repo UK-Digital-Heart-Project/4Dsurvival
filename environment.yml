@@ -1,0 +1,15 @@
+name: Binder-environment
+channels:
+  - conda-forge
+dependencies:
+  - python
+  - numpy
+  - pip:
+    - tensorflow
+    - keras
+    - lifelines
+    - optunity
+    - matplotlib
+    - sklearn
+    - scipy
+    - pandas
