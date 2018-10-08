@@ -2,7 +2,7 @@ name: Binder-environment
 channels:
   - conda-forge
 dependencies:
-  - python
+  - python=3.5
   - numpy
   - pip:
     - tensorflow
