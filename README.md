@@ -17,14 +17,14 @@ To run the code in the [demo](demo) directory, we provide a [Binder](https://myb
 
 ## 1. Running Jupyter notebooks via Binder
 
-The Jupyter notebooks in the [demo](demo) directory are hosted on Binder, which provides an interactive user interface for executing Jupyter notebooks. Click the link provided below for access:
+The Jupyter notebooks in the [demo](demo) directory are hosted on [Binder](https://mybinder.org/), which provides an interactive user interface for executing Jupyter notebooks. Click the link provided below for access:
 
 [![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/UK-Digital-Heart-Project/4Dsurvival/master)
 
 
 ## 2. Installation/Usage Guide for Docker Image
 
-A Docker image is available for running the code available in the [demo](demo) directory. This image contains a base Ubuntu linux operating system image set up with all the libraries required to run the code (e.g. *Tensorflow*, *Keras*, *Optunity*, etc.). The image contains all the code, as well as simulated data on which the code can be run. 
+A Docker image is available for running the code available in the [demo](demo) directory. This image contains a base Ubuntu Linux operating system image set up with all the libraries required to run the code (e.g. *Tensorflow*, *Keras*, *Optunity*, etc.). The image contains all the code, as well as simulated cardiac data on which the code can be run. 
 
 ### Install Docker
 Running our 4D*survival* Docker image requires installation of the Docker software, instructions are available at https://docs.docker.com/install/ 
@@ -39,13 +39,13 @@ Once a terminal is open, running the following command:
 
     docker images
 
-should show `ghalibbello/4dsurvival` on the list of images on your local system
+should show `ghalibbello/4dsurvival` on the list of Docker images on your local system
 
 ### Run 4D*survival* Docker image
     
     docker run -it ghalibbello/4dsurvival:latest /bin/bash
 
-launches an interactive linux shell terminal that gives users access to the image's internal file system. This file system contains all the code in this repository, along with simulated data on which the code can be run.
+launches an interactive linux shell terminal that gives users access to the image's internal file system. This file system contains all the code in this repository, along with the simulated data on which the code can be run.
 Typing 
 ```
 ls -l
@@ -62,7 +62,7 @@ From the 4dSurv directory, navigate to the `demo` directory by typing:
 cd demo
 ls -l
 ```
-The `demo_hypersearchDL.py` file should be visible. This executes a hyperparameter search (see Methods section in paper) for training of the `4Dsurvival` deep learning network. A demo of this code (which uses simulated input data) can now be run (WARNING: on most machines, this will take several hours to run):
+The `demo_hypersearchDL.py` file should be visible. This executes a hyperparameter search (see Methods section in paper) for training of the `4Dsurvival` deep learning network. A demo of this code (which uses simulated input data) can now be run (WARNING: on most machines, this will take several hours to complete):
 ```
 python3 demo_hypersearchDL.py
 ```
@@ -74,7 +74,7 @@ python3 demo_validate.py
 
 ## Citation
 
-Bello GA,  Dawes TJW, Duan J, Biffi C, de Marvao A, Howard LSGE, Gibbs JSR, Wilkins MR, Cook SA, Rueckert D, O'Regan DP. Deep learning cardiac motion analysis for human survival prediction. [*arXiv: 1810.03382*](https://arxiv.org/abs/1810.03382), 2018.
+Ghalib Bello,  Timothy J.W. Dawes, Jinming Duan, Carlo Biffi, Antonio de Marvao, Luke SGE Howard, J. Simon R. Gibbs, Martin R. Wilkins, Stuart A. Cook, Daniel Rueckert, Declan P. O'Regan. Deep learning cardiac motion analysis for human survival prediction. [*arXiv: 1810.03382*](https://arxiv.org/abs/1810.03382), 2018.
 
 ```
 @article{Imperial4DSurvival,
