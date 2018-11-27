@@ -73,8 +73,7 @@ python3 demo_validate.py
 ```
 
 ## Citation
-
-Ghalib Bello,  Timothy J.W. Dawes, Jinming Duan, Carlo Biffi, Antonio de Marvao, Luke SGE Howard, J. Simon R. Gibbs, Martin R. Wilkins, Stuart A. Cook, Daniel Rueckert, Declan P. O'Regan. Deep learning cardiac motion analysis for human survival prediction. [*arXiv: 1810.03382*](https://arxiv.org/abs/1810.03382), 2018.
+Bello GA, Dawes TJW, Duan J, Biffi C, de Marvao A, Howard LSGE, Gibbs JSR, Wilkins MR, Cokk SA, Rueckert D, O'Regan DP. Deep learning cardiac motion analysis for human survival prediction. *arXiv preprint [arXiv:181003382](https://arxiv.org/abs/1810.03382)*, 2018
 
 ```
 @article{Imperial4DSurvival,
