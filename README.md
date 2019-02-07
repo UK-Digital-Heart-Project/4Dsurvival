@@ -22,7 +22,7 @@ The Jupyter notebooks in the [demo](demo) directory are hosted on [Binder](https
 [![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/UK-Digital-Heart-Project/4Dsurvival/master)
 
 
-## 2. Installation/Usage Guide for Docker Image
+## 2. Installation/Usage instructions for Docker Image
 
 A Docker image is available for running the code available in the [demo](demo) directory. This image contains a base Ubuntu Linux operating system image set up with all the libraries required to run the code (e.g. *Tensorflow*, *Keras*, *Optunity*, etc.). The image contains all the code, as well as simulated cardiac data on which the code can be run. 
 
