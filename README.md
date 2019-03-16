@@ -72,12 +72,12 @@ Also under the `demo` folder, the `demo_validate.py` file should be visible. Thi
 python3 demo_validate.py
 ```
 
-## Citation
+## Citations
 Bello GA, Dawes TJW, Duan J, Biffi C, de Marvao A, Howard LSGE, Gibbs JSR, Wilkins MR, Cook SA, Rueckert D, O'Regan DP. Deep learning cardiac motion analysis for human survival prediction. *arXiv preprint [arXiv:181003382](https://arxiv.org/abs/1810.03382)*. 2018.
 
 
 Duan J, Bello G, Schlemper J, Bai W, Dawes TJ, Biffi C, de Marvao A, Doumou G, O’Regan DP, Rueckert D. Automatic 3D bi-ventricular segmentation of cardiac images by a shape-refined multi-task deep learning approach. *IEEE Transactions on Medical Imaging*, 2019.
-
+<!--
 ```
 @article{Imperial4DSurvival,
   title = {Deep learning cardiac motion analysis for human survival prediction},
@@ -86,7 +86,7 @@ Duan J, Bello G, Schlemper J, Bai W, Dawes TJ, Biffi C, de Marvao A, Doumou G, O
   url = {https://arxiv.org/abs/1810.03382},
 }
 ```
-
+-->
 
 
  
