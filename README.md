@@ -15,11 +15,15 @@ The files in this repository are organized into 3 directories:
 
 To run the code in the [demo](demo) directory, we provide a [Binder](https://mybinder.org/) interface (for the Jupyter notebooks) and a Docker container (for the corresponding Python scripts). Below are usage instructions:
 
-## 1. Running Jupyter notebooks via Binder
+## 1. Running Jupyter notebooks via Binder or Code Ocean
 
 The Jupyter notebooks in the [demo](demo) directory are hosted on [Binder](https://mybinder.org/), which provides an interactive user interface for executing Jupyter notebooks. Click the link provided below for access:
 
 [![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/UK-Digital-Heart-Project/4Dsurvival/master)
+
+You can also edit code, change parameters, and re-run the analysis interactively in Code Ocean.
+
+[![Open in Code Ocean](https://codeocean.com/codeocean-assets/badge/open-in-code-ocean.svg)]((https://doi.org/10.24433/CO.8519672.v1)
 
 
 ## 2. Installation/Usage instructions for Docker Image
