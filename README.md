@@ -23,7 +23,7 @@ The Jupyter notebooks in the [demo](demo) directory are hosted on [Binder](https
 
 You can also edit code, change parameters, and re-run the analysis interactively in Code Ocean.
 
-[![Open in Code Ocean](https://codeocean.com/codeocean-assets/badge/open-in-code-ocean.svg)]((https://doi.org/10.24433/CO.8519672.v1)
+[![Open in Code Ocean](https://codeocean.com/codeocean-assets/badge/open-in-code-ocean.svg)](https://doi.org/10.24433/CO.8519672.v1)
 
 
 ## 2. Installation/Usage instructions for Docker Image
