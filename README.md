@@ -73,20 +73,10 @@ python3 demo_validate.py
 ```
 
 ## Citations
-Bello GA, Dawes TJW, Duan J, Biffi C, de Marvao A, Howard LSGE, Gibbs JSR, Wilkins MR, Cook SA, Rueckert D, O'Regan DP. Deep learning cardiac motion analysis for human survival prediction. *arXiv preprint [arXiv:181003382](https://arxiv.org/abs/1810.03382)*. 2018.
+Bello GA, Dawes TJW, Duan J, Biffi C, de Marvao A, Howard LSGE, Gibbs JSR, Wilkins MR, Cook SA, Rueckert D, O'Regan DP. Deep learning cardiac motion analysis for human survival prediction. *[Nature Machine Intelligence](https://doi.org/10.1038/s42256-019-0019-2)* 1, 
+95–104 (2019).
 
-
-Duan J, Bello G, Schlemper J, Bai W, Dawes TJ, Biffi C, de Marvao A, Doumou G, O’Regan DP, Rueckert D. Automatic 3D bi-ventricular segmentation of cardiac images by a shape-refined multi-task deep learning approach. *IEEE Transactions on Medical Imaging*, 2019.
-<!--
-```
-@article{Imperial4DSurvival,
-  title = {Deep learning cardiac motion analysis for human survival prediction},
-  author = {Bello, GA and Dawes, TJW and Duan, Jinming and Biffi, C and de Marvao, A and Howard, LSGE and Gibbs, JSR and Wilkins, MR and Cook, SA and Rueckert, D and O'Regan, DP},
-  year = {2018},
-  url = {https://arxiv.org/abs/1810.03382},
-}
-```
--->
+Duan J, Bello G, Schlemper J, Bai W, Dawes TJ, Biffi C, de Marvao A, Doumou G, O’Regan DP, Rueckert D. Automatic 3D bi-ventricular segmentation of cardiac images by a shape-refined multi-task deep learning approach. *[IEEE Transactions on Medical Imaging](https://doi.org/10.1109/TMI.2019.2894322)* (2019).
 
 
  
