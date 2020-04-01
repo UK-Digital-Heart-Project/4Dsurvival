@@ -1,7 +1,7 @@
 # Deep learning cardiac motion analysis for human survival prediction (4D*survival*) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1451540.svg)](https://doi.org/10.5281/zenodo.1451540)
 ![4Dsurvival Network Architecture](data/DAE3.png)
 
-The code in this repository implements 4D*survival*, a network for carrying out classification/prediction using 3D motion input data. The present implementation was trained using MRI-derived heart motion data and survival outcomes on pulmonary hypertension patients. 
+The code in this repository implements 4D*survival*, a deep neural network for carrying out classification/prediction using 3D motion input data. The present implementation was trained using MRI-derived heart motion data and survival outcomes on pulmonary hypertension patients. 
 
 # Overview
 The files in this repository are organized into 3 directories:
