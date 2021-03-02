@@ -33,7 +33,7 @@ A Docker image is available for running the code available in the [demo](demo) d
 ### Install Docker
 Running our 4D*survival* Docker image requires installation of the Docker software, instructions are available at https://docs.docker.com/install/ 
 
-### Download 4D*survival* Docker image
+### Download 4D*survival* Docker image (CPU)
 Once the Docker software has been installed, our 4D*survival* Docker image can be pulled from the Docker hub using the following command:
     
     docker pull ghalibbello/4dsurvival:latest
@@ -59,6 +59,18 @@ will list all the folders in the working directory of the Docker image (/4DSurv)
 Below we will demonstrate how to perform (within the Docker image) the following analyses:
 - [x] Train deep learning network
 - [x] Train and validate conventional parameter model
+
+
+### 4D*survival* GPU Docker image
+To be able to utilise GPU in docker container, download the GPU docker image:
+
+    docker pull lisurui6/4dsurvival-gpu:latest
+    
+Run the GPU docker image 
+
+    nvidia-docker run -ti lisurui6/4dsurvival:latest
+
+Dockerfile for build the GPU image is described in `docker/gpu/Dockerfile`.
 
 #### Train deep learning network
 From the 4dSurv directory, navigate to the `demo` directory by typing:
