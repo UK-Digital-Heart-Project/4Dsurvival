@@ -1,16 +1,16 @@
 import optunity
-import lifelines
 from lifelines.utils import concordance_index
-import os, sys, pickle
-import numpy as np
+import pickle
 
-sys.path.insert(0, '../code')
-from trainDL import *
+from survival4D.trainDL import DL_single_run
+from survival4D.paths import DATA_DIR
 
-with open('../data/inputdata_DL.pkl', 'rb') as f: c3 = pickle.load(f)
+
+with open(str(DATA_DIR.joinpath("inputdata_DL.pkl")), 'rb') as f: c3 = pickle.load(f)
 x_full = c3[0]
 y_full = c3[1]
 del c3
+
 
 def hypersearch_DL(x_data, y_data, method, nfolds, nevals, lrexp_range, l1rexp_range, dro_range, 
                    units1_range, units2_range, alpha_range, batch_size, num_epochs):
@@ -32,8 +32,10 @@ def hypersearch_DL(x_data, y_data, method, nfolds, nevals, lrexp_range, l1rexp_r
     return optimal_pars, searchlog
     
     
-opars, clog = hypersearch_DL(x_data=x_full, y_data=y_full, 
-                             method='particle swarm', nfolds=6, nevals=50,
-                             lrexp_range=[-6.,-4.5], l1rexp_range=[-7,-4], dro_range=[.1,.9], 
-                             units1_range=[75,250],  units2_range=[5,20],  alpha_range=[0.3, 0.7],
-                             batch_size=16, num_epochs=100)
+opars, clog = hypersearch_DL(
+    x_data=x_full, y_data=y_full,
+    method='particle swarm', nfolds=6, nevals=50,
+    lrexp_range=[-6.,-4.5], l1rexp_range=[-7,-4], dro_range=[.1,.9],
+    units1_range=[75,250],  units2_range=[5,20],  alpha_range=[0.3, 0.7],
+    batch_size=16, num_epochs=100
+)
