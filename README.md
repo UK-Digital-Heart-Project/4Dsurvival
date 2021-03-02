@@ -5,7 +5,7 @@ The code in this repository implements 4D*survival*, a deep neural network for c
 
 # Overview
 The files in this repository are organized into 3 directories:
-* [code](code) : contains base functions for fitting the 2 types of statistical models used in our paper: 4D*survival* (supervised denoising autoencoder for survival outcomes) and a penalized Cox Proportional Hazards regression model.
+* [code](survival4D) : contains base functions for fitting the 2 types of statistical models used in our paper: 4D*survival* (supervised denoising autoencoder for survival outcomes) and a penalized Cox Proportional Hazards regression model.
 * [demo](demo) : contains functions for the statistical analyses carried out in our paper:
   * Training of DL model - [demo/demo_hypersearchDL.py](demo/demo_hypersearchDL.py)
   * Generation of Kaplan-Meier plots - [demo/demo_KMplot.py](demo/demo_KMplot.py)
