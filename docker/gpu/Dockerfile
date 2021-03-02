@@ -5,8 +5,8 @@ RUN apt-get update && apt-get install -y build-essential git libjpeg-dev && \
 
 WORKDIR /root
 
-RUN mkdir code && cd code && git clone https://github.com/UK-Digital-Heart-Project/4Dsurvival.git
+RUN git clone https://github.com/UK-Digital-Heart-Project/4Dsurvival.git
 
 RUN pip3 install --upgrade pip setuptools
 
-RUN pip3 install --upgrade keras lifelines optunity matplotlib sklearn scipy pandas numpy
+RUN pip3 install --upgrade keras==2.2.2 lifelines optunity matplotlib sklearn scipy pandas numpy
