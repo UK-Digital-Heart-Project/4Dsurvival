@@ -73,7 +73,15 @@ Run the GPU docker image
 Dockerfile for build the GPU image is described in `docker/gpu/Dockerfile`.
 
 #### Train deep learning network
-From the 4dSurv directory, navigate to the `demo` directory by typing:
+In the docker image, `survival4D` has already installed, so that you can run the following python command anywhere. 
+If you are running outside of docker, and want to install the package, from the 4Dsurvival directory, do:
+
+    python setup.py develop
+
+`develop` command allows you to makes changes to the code and do not need to reinstall for the changes to be applied. 
+
+
+From the 4Dsurvival directory, navigate to the `demo` directory by typing:
 ```
 cd demo
 ls -l
