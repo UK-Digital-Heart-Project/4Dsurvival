@@ -96,6 +96,16 @@ Also under the `demo` folder, the `demo_validate.py` file should be visible. Thi
 python3 demo_validate.py
 ```
 
+By default, all code in `demo` will use data from [data](data) directory. To point to a different data directory, 
+run the above commands with an additional option: `-d`, such as
+
+    python3 demo_hypersearchDL.py -d /path-to-data-dir
+
+You could also specify the data file name with option `-f`, such as
+
+    python3 demo_hypersearchDL.py -d /path-to-data-dir -f data.pkl
+    
+
 ## Citations
 Bello GA, Dawes TJW, Duan J, Biffi C, de Marvao A, Howard LSGE, Gibbs JSR, Wilkins MR, Cook SA, Rueckert D, O'Regan DP. Deep-learning cardiac motion analysis for human survival prediction. *[Nature Machine Intelligence](https://doi.org/10.1038/s42256-019-0019-2)* 1, 
 95–104 (2019).
