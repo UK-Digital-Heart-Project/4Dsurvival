@@ -21,6 +21,9 @@ def parse_args():
         "-d", "--data-dir", dest="data_dir", type=str, default=None, help="Directory where the data file is."
     )
     parser.add_argument(
+        "--output-dir", dest="output_dir", type=str, default=None, help="Directory where to output files."
+    )
+    parser.add_argument(
         "-f", "--file-name", dest="file_name", type=str, default="inputdata_DL.pkl", help="Data file name."
     )
     parser.add_argument(
@@ -41,6 +44,10 @@ def main():
         data_dir = DATA_DIR
     else:
         data_dir = Path(args.data_dir)
+    if args.output_dir is None:
+        output_dir = data_dir.joinpath("params_output")
+    else:
+        output_dir = Path(args.output_dir)
     # import input data: i_full=list of patient IDs, y_full=censoring status and survival times for patients,
     # x_full=input data for patients (i.e. motion descriptors [11,514-element vector])
     dropout_max = args.dropout_max
@@ -66,7 +73,7 @@ def main():
         alpha_range=[0.3, 0.7], batch_size=16, num_epochs=100
     )
     # save opars
-    save_params(opars, osummary, "step_1a", data_dir.joinpath("params_output"))
+    save_params(opars, osummary, "step_1a", output_dir)
     print("Step b")
     # (1b) using optimal hyperparameters, train a model on full sample
     olog = DL_single_run(
@@ -103,7 +110,7 @@ def main():
             l1rexp_range=[-7, -4], dro_range=[.1, dropout_max], units1_range=[75, 250], units2_range=[5, 20],
             alpha_range=[0.3, 0.7], batch_size=16, num_epochs=100
         )
-        save_params(bpars, bsummary, "bootstrap_{}".format(b), data_dir.joinpath("params_output"))
+        save_params(bpars, bsummary, "bootstrap_{}".format(b), output_dir)
         # (2b) using optimal hyperparameters, train a model on bootstrap sample
         blog = DL_single_run(
             xtr=xboot, ytr=yboot, units1=bpars['units1'], units2=bpars['units2'], dro=bpars['dro'],
