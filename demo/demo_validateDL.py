@@ -1,7 +1,9 @@
 """
 @author: gbello
 """
-
+import json
+from matplotlib import pyplot as plt
+from datetime import timedelta
 import pickle
 import numpy as np
 from pathlib import Path
@@ -21,6 +23,15 @@ def parse_args():
     parser.add_argument(
         "-f", "--file-name", dest="file_name", type=str, default="inputdata_DL.pkl", help="Data file name."
     )
+    parser.add_argument(
+        "--n-evals", dest="n_evals", type=int, default=50, help="Number of evaluations per each hyperparam fold."
+    )
+    parser.add_argument(
+        "--dropout-max", dest="dropout_max", type=float, default=0.9, help="Maximum dropout rate."
+    )
+    parser.add_argument(
+        "--n-bootstraps", dest="n_bootstraps", type=int, default=100, help="Number of bootstrap samples."
+    )
     return parser.parse_args()
 
 
@@ -32,6 +43,9 @@ def main():
         data_dir = Path(args.data_dir)
     # import input data: i_full=list of patient IDs, y_full=censoring status and survival times for patients,
     # x_full=input data for patients (i.e. motion descriptors [11,514-element vector])
+    dropout_max = args.dropout_max
+    n_evals = args.n_evals
+    n_bootstraps = args.n_bootstraps
     with open(str(data_dir.joinpath(args.file_name)), 'rb') as f:
         c3 = pickle.load(f)
     x_full = c3[0]
@@ -41,16 +55,19 @@ def main():
     # Initialize lists to store predictions
     preds_bootfull = []
     inds_inbag = []
-    Cb_opts  = []
+    Cb_opts = []
 
     # STEP 1
     # (1a) find optimal hyperparameters
+    print("Step 1a")
     opars, osummary = hypersearch_DL(
-        x_data=x_full, y_data=y_full, method='particle swarm', nfolds=6, nevals=50, lrexp_range=[-6., -4.5],
-        l1rexp_range=[-7, -4], dro_range=[.1, .9], units1_range=[75, 250], units2_range=[5, 20],
+        x_data=x_full, y_data=y_full, method='particle swarm', nfolds=6, nevals=n_evals, lrexp_range=[-6., -4.5],
+        l1rexp_range=[-7, -4], dro_range=[.1, dropout_max], units1_range=[75, 250], units2_range=[5, 20],
         alpha_range=[0.3, 0.7], batch_size=16, num_epochs=100
     )
-
+    # save opars
+    save_params(opars, osummary, "step_1a", data_dir.joinpath("params_output"))
+    print("Step b")
     # (1b) using optimal hyperparameters, train a model on full sample
     olog = DL_single_run(
         xtr=x_full, ytr=y_full, units1=opars['units1'], units2=opars['units2'], dro=opars['dro'],
@@ -59,7 +76,7 @@ def main():
 
     # (1c) Compute Harrell's Concordance index
     predfull = olog.model.predict(x_full, batch_size=1)[1]
-    C_app = concordance_index(y_full[:,1], -predfull, y_full[:,0])
+    C_app = concordance_index(y_full[:, 1], -predfull, y_full[:, 0])
 
     print('Apparent concordance index = {0:.4f}'.format(C_app))
 
@@ -68,7 +85,7 @@ def main():
     # define useful variables
     nsmp = len(x_full)
     rowids = [_ for _ in range(nsmp)]
-    B = 100
+    B = n_bootstraps
 
     for b in range(B):
         print('Current bootstrap sample:', b, 'of', B-1)
@@ -80,12 +97,13 @@ def main():
         yboot = y_full[b_inds]
 
         # (2a) find optimal hyperparameters
+        print("Step 2a")
         bpars, bsummary = hypersearch_DL(
-            x_data=xboot, y_data=yboot, method='particle swarm', nfolds=6, nevals=50, lrexp_range=[-6., -4.5],
-            l1rexp_range=[-7, -4], dro_range=[.1, .9], units1_range=[75, 250], units2_range=[5, 20],
+            x_data=xboot, y_data=yboot, method='particle swarm', nfolds=6, nevals=n_evals, lrexp_range=[-6., -4.5],
+            l1rexp_range=[-7, -4], dro_range=[.1, dropout_max], units1_range=[75, 250], units2_range=[5, 20],
             alpha_range=[0.3, 0.7], batch_size=16, num_epochs=100
         )
-
+        save_params(bpars, bsummary, "bootstrap_{}".format(b), data_dir.joinpath("params_output"))
         # (2b) using optimal hyperparameters, train a model on bootstrap sample
         blog = DL_single_run(
             xtr=xboot, ytr=yboot, units1=bpars['units1'], units2=bpars['units2'], dro=bpars['dro'],
@@ -111,7 +129,6 @@ def main():
 
         del bpars, blog
 
-
     # STEP 5
     # Compute bootstrap-estimated optimism (mean of optimism estimates across the B bootstrap samples)
     C_opt = np.mean(Cb_opts)
@@ -122,9 +139,17 @@ def main():
     # compute confidence intervals for optimism-adjusted C
     C_opt_95confint = np.percentile([C_app - o for o in Cb_opts], q=[2.5, 97.5])
 
-
     print('Optimism bootstrap estimate = {0:.4f}'.format(C_opt))
     print('Optimism-adjusted concordance index = {0:.4f}, and 95% CI = {1}'.format(C_adj, C_opt_95confint))
+
+
+def save_params(params: dict, search_log, name: str, output_dir: Path):
+    output_dir.mkdir(parents=True, exist_ok=True)
+    params["c_index"] = search_log.optimum
+    params["num_evals"] = search_log.stats["num_evals"]
+    params["time"] = str(timedelta(seconds=search_log.stats["time"]))
+    with open(str(output_dir.joinpath(name + ".json")), "w") as fp:
+        json.dump(params, fp, indent=4)
 
 
 if __name__ == '__main__':

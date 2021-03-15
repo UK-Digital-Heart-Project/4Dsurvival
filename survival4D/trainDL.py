@@ -70,7 +70,7 @@ def DL_single_run(xtr, ytr, units1, units2, dro, lr, l1r, alpha, batchsize, nume
     decoded = Dense(units=inpshape, activation='linear', name='decoded')(z)
 
     model = Model(inputs=inputvec, outputs=[decoded,riskpred])
-    model.summary()
+    # model.summary()
     
     # Model compilation
     optimdef = Adam(lr=lr)
@@ -82,6 +82,6 @@ def DL_single_run(xtr, ytr, units1, units2, dro, lr, l1r, alpha, batchsize, nume
     )
     
     # Run model
-    mlog = model.fit(X_tr, [X_tr,E_tr], batch_size=batchsize, epochs=numepochs, shuffle=False, verbose=1)
+    mlog = model.fit(X_tr, [X_tr,E_tr], batch_size=batchsize, epochs=numepochs, shuffle=False, verbose=2)
 
     return mlog
