@@ -6,11 +6,13 @@ The code in this repository implements 4D*survival*, a deep neural network for c
 # Overview
 The files in this repository are organized into 3 directories:
 * [code](survival4D) : contains base functions for fitting the 2 types of statistical models used in our paper: 4D*survival* (supervised denoising autoencoder for survival outcomes) and a penalized Cox Proportional Hazards regression model.
-* [demo](demo) : contains functions for the statistical analyses carried out in our paper:
-  * Training of DL model - [demo/demo_hypersearchDL.py](demo/demo_hypersearchDL.py)
-  * Generation of Kaplan-Meier plots - [demo/demo_KMplot.py](demo/demo_KMplot.py)
-  * statistical comparison of model performance - [demo/demo_modelcomp_pvalue.py](demo/demo_modelcomp_pvalue.py)
-  * Bootstrap internal validation - [demo/demo_validate.py](demo/demo_validate.py)
+* [demo](demo)
+    * [demo/scripts](demo/scripts): contains functions for the statistical analyses carried out in our paper:
+        * Training of DL model - [demo/scripts/demo_hypersearchDL.py](demo/scripts/demo_hypersearchDL.py)
+        * Generation of Kaplan-Meier plots - [demo/scripts/demo_KMplot.py](demo/scripts/demo_KMplot.py)
+        * statistical comparison of model performance - [demo/scripts/demo_modelcomp_pvalue.py](demo/scripts/demo_modelcomp_pvalue.py)
+        * Bootstrap internal validation - [demo/scripts/demo_validate.py](demo/scripts/demo_validate.py)
+    * [demo/notebooks](demo/notebooks): contains ipython notebooks for demoing the above scripts.
 * [data](data) : contains simulated data on which functions from the `demo` directory can be run.
 
 To run the code in the [demo](demo) directory, we provide a [Binder](https://mybinder.org/) interface (for the Jupyter notebooks) and a Docker container (for the corresponding Python scripts). Below are usage instructions:
@@ -64,13 +66,17 @@ Below we will demonstrate how to perform (within the Docker image) the following
 ### 4D*survival* GPU Docker image
 To be able to utilise GPU in docker container, download the GPU docker image:
 
-    docker pull lisurui6/4dsurvival-gpu:latest
+    docker pull lisurui6/4dsurvival-gpu:1.0
     
 Run the GPU docker image 
 
-    nvidia-docker run -ti lisurui6/4dsurvival:latest
+    nvidia-docker run -ti lisurui6/4dsurvival:1.0
 
-Dockerfile for build the GPU image is described in `docker/gpu/Dockerfile`.
+Dockerfile for build the GPU image is described in [docker/gpu/1.0/Dockerfile](docker/gpu/1.0/Dockerfile).
+
+To use the docker image with the latest lifelines, pull from `lisurui6/4dsurvival-gpu:1.1`.
+
+Dockerfile is described in [docker/gpu/1.1/Dockerfile](docker/gpu/1.1/Dockerfile).
 
 #### Train deep learning network
 In the docker image, `survival4D` has already installed, so that you can run the following python command anywhere. 
@@ -81,9 +87,9 @@ If you are running outside of docker, and want to install the package, from the 
 `develop` command allows you to makes changes to the code and do not need to reinstall for the changes to be applied. 
 
 
-From the 4Dsurvival directory, navigate to the `demo` directory by typing:
+From the 4Dsurvival directory, navigate to the `demo/scripts` directory by typing:
 ```
-cd demo
+cd demo/scripts
 ls -l
 ```
 The `demo_hypersearchDL.py` file should be visible. This executes a hyperparameter search (see Methods section in paper) for training of the `4Dsurvival` deep learning network. A demo of this code (which uses simulated input data) can now be run (WARNING: on most machines, this will take several hours to complete):
@@ -91,12 +97,12 @@ The `demo_hypersearchDL.py` file should be visible. This executes a hyperparamet
 python3 demo_hypersearchDL.py
 ```
 
-Also under the `demo` folder, the `demo_validate.py` file should be visible. This executes the bootstrap-based approach for training and internal validation of the Cox Proportional Hazards model for conventional (volumetric) parameters. A demo of this code (which uses simulated input data) can now be run :
+Also under the `demo/scripts` folder, the `demo_validate.py` file should be visible. This executes the bootstrap-based approach for training and internal validation of the Cox Proportional Hazards model for conventional (volumetric) parameters. A demo of this code (which uses simulated input data) can now be run :
 ```
 python3 demo_validate.py
 ```
 
-By default, all code in `demo` will use data from [data](data) directory. To point to a different data directory, 
+By default, all code in `demo/scripts` will use data from [data](data) directory. To point to a different data directory, 
 run the above commands with an additional option: `-d`, such as
 
     python3 demo_hypersearchDL.py -d /path-to-data-dir
