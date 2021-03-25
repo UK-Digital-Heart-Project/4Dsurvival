@@ -155,6 +155,7 @@ def save_params(params: dict, search_log, name: str, output_dir: Path):
     params["c_index"] = search_log.optimum
     params["num_evals"] = search_log.stats["num_evals"]
     params["time"] = str(timedelta(seconds=search_log.stats["time"]))
+    params["call_log"] = search_log.call_log
     with open(str(output_dir.joinpath(name + ".json")), "w") as fp:
         json.dump(params, fp, indent=4)
 
