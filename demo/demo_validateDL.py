@@ -13,6 +13,7 @@ from lifelines.utils import concordance_index
 from survival4D.trainDL import DL_single_run
 from survival4D.hypersearch import hypersearch_DL
 from survival4D.paths import DATA_DIR
+from matplotlib import pyplot as plt
 
 
 def parse_args():
@@ -73,7 +74,6 @@ def main():
         alpha_range=[0.3, 0.7], batch_size=16, num_epochs=100
     )
     # save opars
-    save_params(opars, osummary, "step_1a", output_dir)
     print("Step b")
     # (1b) using optimal hyperparameters, train a model on full sample
     olog = DL_single_run(
@@ -84,6 +84,7 @@ def main():
     # (1c) Compute Harrell's Concordance index
     predfull = olog.model.predict(x_full, batch_size=1)[1]
     C_app = concordance_index(y_full[:, 1], -predfull, y_full[:, 0])
+    save_params(opars, osummary, "step_1a", output_dir, c_index_full=C_app)
 
     print('Apparent concordance index = {0:.4f}'.format(C_app))
 
@@ -93,7 +94,11 @@ def main():
     nsmp = len(x_full)
     rowids = [_ for _ in range(nsmp)]
     B = n_bootstraps
-
+    plot_c_opts = []
+    plot_c_adjs = []
+    plot_bs_samples = []
+    plot_c_adjs_lb = []
+    plot_c_adjs_up = []
     for b in range(B):
         print('Current bootstrap sample:', b, 'of', B-1)
         print('-------------------------------------')
@@ -110,7 +115,6 @@ def main():
             l1rexp_range=[-7, -4], dro_range=[.1, dropout_max], units1_range=[75, 250], units2_range=[5, 20],
             alpha_range=[0.3, 0.7], batch_size=16, num_epochs=100
         )
-        save_params(bpars, bsummary, "bootstrap_{}".format(b), output_dir)
         # (2b) using optimal hyperparameters, train a model on bootstrap sample
         blog = DL_single_run(
             xtr=xboot, ytr=yboot, units1=bpars['units1'], units2=bpars['units2'], dro=bpars['dro'],
@@ -133,7 +137,24 @@ def main():
         preds_bootfull.append(predbootfull)
         inds_inbag.append(b_inds)
         Cb_opts.append(Cb_opt)
+        print('Current bootstrap sample:', b, 'of', B-1)
+        print('-------------------------------------')
+        c_opt, c_adj, c_opt_95confint = compute_bootstrap_adjusted_c_index(C_app, Cb_opts)
 
+        save_params(
+            bpars, bsummary, "bootstrap_{}".format(b), output_dir,
+            c_opt=c_opt, c_adj=c_adj, c_opt_95confint=c_opt_95confint,
+            cb_boot=Cb_boot, cb_full=Cb_full, cb_opt=Cb_opt
+        )
+
+        # plot c_opt, c_adj with c_app as title
+        plot_c_opts.append(c_opt)
+        plot_bs_samples.append(b)
+        plot_c_adjs.append(c_adj)
+        plot_c_adjs_lb.append(c_opt_95confint[0])
+        plot_c_adjs_up.append(c_opt_95confint[1])
+
+        plot_c_indices(plot_bs_samples, plot_c_opts, plot_c_adjs, plot_c_adjs_lb, plot_c_adjs_up, C_app, output_dir)
         del bpars, blog
 
     # STEP 5
@@ -150,14 +171,44 @@ def main():
     print('Optimism-adjusted concordance index = {0:.4f}, and 95% CI = {1}'.format(C_adj, C_opt_95confint))
 
 
-def save_params(params: dict, search_log, name: str, output_dir: Path):
+def save_params(params: dict, search_log, name: str, output_dir: Path, **kwargs):
     output_dir.mkdir(parents=True, exist_ok=True)
-    params["c_index"] = search_log.optimum
+    params["search_log_optimum_c_index"] = search_log.optimum
     params["num_evals"] = search_log.stats["num_evals"]
     params["time"] = str(timedelta(seconds=search_log.stats["time"]))
     params["call_log"] = search_log.call_log
+    for key in kwargs.keys():
+        params[key] = kwargs[key]
     with open(str(output_dir.joinpath(name + ".json")), "w") as fp:
         json.dump(params, fp, indent=4)
+
+
+def compute_bootstrap_adjusted_c_index(C_app, Cb_opts):
+    # Compute bootstrap-estimated optimism (mean of optimism estimates across the B bootstrap samples)
+    C_opt = np.mean(Cb_opts)
+
+    # Adjust apparent C using bootstrap-estimated optimism
+    C_adj = C_app - C_opt
+
+    # compute confidence intervals for optimism-adjusted C
+    C_opt_95confint = np.percentile([C_app - o for o in Cb_opts], q=[2.5, 97.5])
+
+    print('Optimism bootstrap estimate = {0:.4f}'.format(C_opt))
+    print('Optimism-adjusted concordance index = {0:.4f}, and 95% CI = {1}'.format(C_adj, C_opt_95confint))
+    return C_opt, C_adj, C_opt_95confint
+
+
+def plot_c_indices(bs_samples, c_obts, c_adjs, c_adjs_lb, c_adjst_up, c_app, output_dir: Path):
+    plt.figure()
+    plt.title("c_adj, c_app={:.4f}".format(c_app))
+    plt.fill_between(bs_samples, c_adjs_lb, c_adjst_up, facecolor='red', alpha=0.5, interpolate=True)
+    plt.plot(bs_samples, c_adjs, 'rx-')
+    plt.savefig(str(output_dir.joinpath("c_adj.png")))
+
+    plt.figure()
+    plt.title("c_obt, c_app={:.4f}".format(c_app))
+    plt.plot(bs_samples, c_obts, 'rx-')
+    plt.savefig(str(output_dir.joinpath("c_obt.png")))
 
 
 if __name__ == '__main__':
