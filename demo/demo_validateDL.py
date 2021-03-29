@@ -143,7 +143,7 @@ def main():
 
         save_params(
             bpars, bsummary, "bootstrap_{}".format(b), output_dir,
-            c_opt=c_opt, c_adj=c_adj, c_opt_95confint=c_opt_95confint,
+            c_opt=c_opt, c_adj=c_adj, c_opt_95confint=c_opt_95confint.tolist(),
             cb_boot=Cb_boot, cb_full=Cb_full, cb_opt=Cb_opt
         )
 
