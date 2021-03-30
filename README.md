@@ -4,16 +4,18 @@
 The code in this repository implements 4D*survival*, a deep neural network for carrying out classification/prediction using 3D motion input data. The present implementation was trained using MRI-derived heart motion data and survival outcomes on pulmonary hypertension patients. 
 
 # Overview
-The files in this repository are organized into 3 directories:
-* [code](survival4D) : contains base functions for fitting the 2 types of statistical models used in our paper: 4D*survival* (supervised denoising autoencoder for survival outcomes) and a penalized Cox Proportional Hazards regression model.
+The files in this repository are organized into 4 directories:
+* [survival4D](https://github.com/UK-Digital-Heart-Project/4Dsurvival/tree/master/survival4D): contains base functions for fitting the 2 types of statistical models used in our paper: 4D*survival* (supervised denoising autoencoder for survival outcomes) and a penalized Cox Proportional Hazards regression model.
 * [demo](demo)
     * [demo/scripts](demo/scripts): contains functions for the statistical analyses carried out in our paper:
         * Training of DL model - [demo/scripts/demo_hypersearchDL.py](demo/scripts/demo_hypersearchDL.py)
         * Generation of Kaplan-Meier plots - [demo/scripts/demo_KMplot.py](demo/scripts/demo_KMplot.py)
         * statistical comparison of model performance - [demo/scripts/demo_modelcomp_pvalue.py](demo/scripts/demo_modelcomp_pvalue.py)
-        * Bootstrap internal validation - [demo/scripts/demo_validate.py](demo/scripts/demo_validate.py)
-    * [demo/notebooks](demo/notebooks): contains ipython notebooks for demoing the above scripts.
+        * Bootstrap internal validation for the Cox model- [demo/scripts/demo_validate.py](demo/scripts/demo_validate.py)
+        * Bootstrap internal validation for the deep learning model- [demo/scripts/demo_validateDL.py](demo/scripts/demo_validateDL.py)
+    * [demo/notebooks](demo/notebooks): contains ipython notebooks for demonstrating the above scripts.
 * [data](data) : contains simulated data on which functions from the `demo` directory can be run.
+* [docker/gpu]() : Dockerfiles to build the GPU images. [1.0](https://github.com/UK-Digital-Heart-Project/4Dsurvival/tree/master/docker/gpu/1.0) for the old version of the lifelines package and (1.1](https://github.com/UK-Digital-Heart-Project/4Dsurvival/tree/master/docker/gpu/1.1) for the latest version of the lifelies package.\
 
 To run the code in the [demo](demo) directory, we provide a [Binder](https://mybinder.org/) interface (for the Jupyter notebooks) and a Docker container (for the corresponding Python scripts). Below are usage instructions:
 
@@ -70,7 +72,7 @@ To be able to utilise GPU in docker container, download the GPU docker image:
     
 Run the GPU docker image 
 
-    nvidia-docker run -ti lisurui6/4dsurvival:1.0
+    nvidia-docker run -ti lisurui6/4dsurvival-gpu:1.0
 
 Dockerfile for build the GPU image is described in [docker/gpu/1.0/Dockerfile](docker/gpu/1.0/Dockerfile).
 
@@ -78,13 +80,13 @@ To use the docker image with the latest lifelines, pull from `lisurui6/4dsurviva
 
 Dockerfile is described in [docker/gpu/1.1/Dockerfile](docker/gpu/1.1/Dockerfile).
 
-#### Train deep learning network
-In the docker image, `survival4D` has already installed, so that you can run the following python command anywhere. 
-If you are running outside of docker, and want to install the package, from the 4Dsurvival directory, do:
+#### Train the deep learning network
+In the docker image, `survival4D` has been already installed, so that you can run the following python command anywhere. 
+If you are running outside of docker, and want to install the package from the 4Dsurvival directory, do:
 
     python setup.py develop
 
-`develop` command allows you to makes changes to the code and do not need to reinstall for the changes to be applied. 
+`develop` command allows you to make changes to the code and avoids the reinstallation for the changes to be applied. 
 
 
 From the 4Dsurvival directory, navigate to the `demo/scripts` directory by typing:
@@ -110,7 +112,19 @@ run the above commands with an additional option: `-d`, such as
 You could also specify the data file name with option `-f`, such as
 
     python3 demo_hypersearchDL.py -d /path-to-data-dir -f data.pkl
-    
+## Sample execution sequence of the bootstrapped internal validation for the deep learning model ([demo_validateDL.py](https://github.com/UK-Digital-Heart-Project/4Dsurvival/blob/master/demo/scripts/demo_validateDL.py)) using the container with latest lifelines package:
+`screen`\
+`docker pull lisurui6/4dsurvival-gpu:1.1`\
+Mount a drive to use data from outside of the containder:
+Here the folder '/mnt/.../sjadhav/.../data' will be visible inside the container:\
+`nvidia-docker run -ti --rm -v /mnt/.../sjadhav/.../data:/data lisurui6/4dsurvival-gpu:1.1`\
+`cd 4Dsurvival/demo`\
+Can edit a file (e.g demo_validateDL.py) and make changes (e.g.: changing the dropout range to [.1,.5] in step 1a and 2a of the code or reducing the number of bootstrap   sampling) using the editor vim:\
+`apt-get install vim`\
+`vim demo_validateDL.py`\
+ Execute the script with the available GPU card:\
+`CUDA_VISIBLE_DEVICES=2 python3 demo_validateDL.py`
+
 
 ## Citations
 Bello GA, Dawes TJW, Duan J, Biffi C, de Marvao A, Howard LSGE, Gibbs JSR, Wilkins MR, Cook SA, Rueckert D, O'Regan DP. Deep-learning cardiac motion analysis for human survival prediction. *[Nature Machine Intelligence](https://doi.org/10.1038/s42256-019-0019-2)* 1, 
