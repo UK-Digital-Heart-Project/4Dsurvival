@@ -1,5 +1,8 @@
 """
-@author: gbello
+@author: gbello & lisuru6
+How to run the code
+python demo_validateDL.py -d /path-to-data --output-dir /path-to-output-dir --n-evals 50 --dropout-max 0.9
+
 """
 import json
 from matplotlib import pyplot as plt
