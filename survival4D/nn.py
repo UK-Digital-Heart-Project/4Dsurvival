@@ -1,11 +1,8 @@
-import keras
-from keras import backend as K
-from keras.models import Model
-from keras.layers import Input
-from keras.layers.core import Dense, Dropout
-from keras.optimizers import Adam
-from keras.regularizers import l1
+import optunity
 import numpy as np
+from keras import backend as K
+from lifelines.utils import concordance_index
+from survival4D.models import model_factory
 
 
 def prepare_data(x, e, t):
@@ -24,7 +21,7 @@ def sort4minibatches(xvals, evals, tvals, batchsize):
         es = excerpt[sort_idx]
         esall += list(es)
         start_idx = end_idx
-    return (xvals[esall], evals[esall], tvals[esall], esall)
+    return xvals[esall], evals[esall], tvals[esall], esall
 
 
 def _negative_log_likelihood(E, risk):
@@ -42,46 +39,43 @@ def _negative_log_likelihood(E, risk):
     return neg_likelihood
 
 
-def DL_single_run(xtr, ytr, units1, units2, dro, lr, l1r, alpha, batchsize, numepochs):
+def train_nn(xtr, ytr, batch_size, n_epochs, model_name, **model_kwargs):
     """
     Data preparation: create X, E and TM where X=input vector, E=censoring status and T=survival time.
     Apply formatting (X and T as 'float32', E as 'int32')
-
-
     """
-    X_tr, E_tr, TM_tr = prepare_data(xtr, ytr[:,0,np.newaxis], ytr[:,1])
+    X_tr, E_tr, TM_tr = prepare_data(xtr, ytr[:, 0, np.newaxis], ytr[:, 1])
 
     # Arrange data into minibatches (based on specified batch size), and within each minibatch,
     # sort in descending order of survival/censoring time (see explanation of Cox PH loss function definition)
-    X_tr, E_tr, TM_tr, _ = sort4minibatches(X_tr, E_tr, TM_tr, batchsize)
-    
-    # Before defining network architecture, clear current computation graph (if one exists),
-    # and specify input dimensionality
-    K.clear_session()
-    inpshape = xtr.shape[1]
-    
-    # Define Network Architecture
-    inputvec = Input(shape=(inpshape,))
-    x = Dropout(dro, input_shape=(inpshape,))(inputvec)
-    x = Dense(units=int(units1), activation='relu', activity_regularizer=l1(l1r))(x)
-    encoded = Dense(units=int(units2), activation='relu', name='encoded')(x)
-    riskpred= Dense(units=1,  activation='linear', name='predicted_risk')(encoded)
-    z = Dense(units=int(units1),  activation='relu')(encoded)
-    decoded = Dense(units=inpshape, activation='linear', name='decoded')(z)
+    X_tr, E_tr, TM_tr, _ = sort4minibatches(X_tr, E_tr, TM_tr, batch_size)
 
-    model = Model(inputs=inputvec, outputs=[decoded,riskpred])
-    model.summary()
-    
-    # Model compilation
-    optimdef = Adam(lr=lr)
-    model.compile(
-        loss=[keras.losses.mean_squared_error, _negative_log_likelihood],
-        loss_weights=[alpha, 1-alpha],
-        optimizer=optimdef,
-        metrics={'decoded':keras.metrics.mean_squared_error}
-    )
-    
+    # specify input dimensionality
+    inpshape = xtr.shape[1]
+
+    # Define Network Architecture
+    model_kwargs["input_shape"] = inpshape
+    model = model_factory(model_name, **model_kwargs)
+
     # Run model
-    mlog = model.fit(X_tr, [X_tr,E_tr], batch_size=batchsize, epochs=numepochs, shuffle=False, verbose=1)
+    mlog = model.fit(X_tr, [X_tr, E_tr], batch_size=batch_size, epochs=n_epochs, shuffle=False, verbose=1)
 
     return mlog
+
+
+# 1. Hyperparameter search for Deep Learning model
+def hypersearch_nn(x_data, y_data, method, nfolds, nevals, batch_size, num_epochs, model_name: str, **hypersearch):
+    @optunity.cross_validated(x=x_data, y=y_data, num_folds=nfolds)
+    def modelrun(x_train, y_train, x_test, y_test, **hypersearch):
+        cv_log = train_nn(
+            xtr=x_train, ytr=y_train, batch_size=batch_size, n_epochs=num_epochs, model_name=model_name, **hypersearch
+        )
+        cv_preds = cv_log.model.predict(x_test, batch_size=1)[1]
+        cv_C = concordance_index(y_test[:, 1], -cv_preds, y_test[:, 0])
+        return cv_C
+    optimal_pars, searchlog, _ = optunity.maximize(
+        modelrun, num_evals=nevals, solver_name=method, **hypersearch
+    )
+    print('Optimal hyperparameters : ' + str(optimal_pars))
+    print('Cross-validated C after tuning: %1.3f' % searchlog.optimum)
+    return optimal_pars, searchlog

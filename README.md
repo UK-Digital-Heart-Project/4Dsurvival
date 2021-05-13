@@ -5,10 +5,12 @@ The code in this repository implements 4D*survival*, a deep neural network for c
 
 # Overview
 The files in this repository are organized into 3 directories:
-* [code](survival4D) : contains base functions for fitting the 2 types of statistical models used in our paper: 4D*survival* (supervised denoising autoencoder for survival outcomes) and a penalized Cox Proportional Hazards regression model.
+* [survival4D](survival4D) : contains base functions for fitting the 2 types of statistical models used in our paper: 4D*survival* (supervised denoising autoencoder for survival outcomes) and a penalized Cox Proportional Hazards regression model.
 * [demo](demo)
     * [demo/scripts](demo/scripts): contains functions for the statistical analyses carried out in our paper:
-        * Training of DL model - [demo/scripts/demo_hypersearchDL.py](demo/scripts/demo_hypersearchDL.py)
+        * Training of DL model - [demo/scripts/demo_hypersearch_nn.py](demo/scripts/demo_hypersearch_nn.py)
+        * Default configuration used to train DL model - [demo/scripts/default_nn.conf](demo/scripts/default_nn.conf)
+        * Default configuration used to cox reg model - [demo/scripts/default_cox.conf](demo/scripts/default_cox.conf)
         * Generation of Kaplan-Meier plots - [demo/scripts/demo_KMplot.py](demo/scripts/demo_KMplot.py)
         * statistical comparison of model performance - [demo/scripts/demo_modelcomp_pvalue.py](demo/scripts/demo_modelcomp_pvalue.py)
         * Bootstrap internal validation - [demo/scripts/demo_validate.py](demo/scripts/demo_validate.py)
@@ -38,18 +40,18 @@ Running our 4D*survival* Docker image requires installation of the Docker softwa
 ### Download 4D*survival* Docker image (CPU)
 Once the Docker software has been installed, our 4D*survival* Docker image can be pulled from the Docker hub using the following command:
     
-    docker pull ghalibbello/4dsurvival:latest
+    docker pull lisurui6/4dsurvival-gpu:1.0
 
 Once the image download is complete, open up a command-line terminal. On Windows operating systems, this would be the *Command Prompt* (cmd.exe), accessible by opening the [Run Command utility](https://en.wikipedia.org/wiki/Run_command) using the shortcut key `Win`+`R` and then typing `cmd`. On Mac OS, the terminal is accessible via (Finder > Applications > Utilities > Terminal). On Linux systems, any terminal can be used.
 Once a terminal is open, running the following command:
 
     docker images
 
-should show `ghalibbello/4dsurvival` on the list of Docker images on your local system
+should show `lisurui6/4dsurvival-gpu:1.0` on the list of Docker images on your local system
 
 ### Run 4D*survival* Docker image
     
-    docker run -it ghalibbello/4dsurvival:latest /bin/bash
+    docker run -it 4dsurvival/4dsurvival:1.0 /bin/bash
 
 launches an interactive linux shell terminal that gives users access to the image's internal file system. This file system contains all the code in this repository, along with the simulated data on which the code can be run.
 Typing 
@@ -58,17 +60,8 @@ ls -l
 ```
 will list all the folders in the working directory of the Docker image (/4DSurv). You should see the 3 main folders `code`, `data` and `demo`, which contain the same files as the corresponding folders with the same name in this github repository.
 
-Below we will demonstrate how to perform (within the Docker image) the following analyses:
-- [x] Train deep learning network
-- [x] Train and validate conventional parameter model
 
-
-### 4D*survival* GPU Docker image
-To be able to utilise GPU in docker container, download the GPU docker image:
-
-    docker pull lisurui6/4dsurvival-gpu:1.0
-    
-Run the GPU docker image 
+To be able to utilise GPU in docker container, run the GPU docker image 
 
     nvidia-docker run -ti lisurui6/4dsurvival:1.0
 
@@ -78,7 +71,6 @@ To use the docker image with the latest lifelines, pull from `lisurui6/4dsurviva
 
 Dockerfile is described in [docker/gpu/1.1/Dockerfile](docker/gpu/1.1/Dockerfile).
 
-#### Train deep learning network
 In the docker image, `survival4D` has already installed, so that you can run the following python command anywhere. 
 If you are running outside of docker, and want to install the package, from the 4Dsurvival directory, do:
 
@@ -87,30 +79,116 @@ If you are running outside of docker, and want to install the package, from the 
 `develop` command allows you to makes changes to the code and do not need to reinstall for the changes to be applied. 
 
 
+Below we will demonstrate how to perform (within the Docker image) the following analyses:
+- [x] Train deep learning network
+- [x] Train and validate conventional parameter model
+
 From the 4Dsurvival directory, navigate to the `demo/scripts` directory by typing:
 ```
 cd demo/scripts
 ls -l
 ```
-The `demo_hypersearchDL.py` file should be visible. This executes a hyperparameter search (see Methods section in paper) for training of the `4Dsurvival` deep learning network. A demo of this code (which uses simulated input data) can now be run (WARNING: on most machines, this will take several hours to complete):
+
+
+#### Train deep learning network
+
+The `demo_hypersearch_nn.py` file should be visible. This executes a hyperparameter search (see Methods section in paper) 
+for training of the `4Dsurvival` deep learning network. A demo of this code (which uses simulated input data) can now 
+be run (WARNING: on most machines, this will take several hours to complete):
+
 ```
-python3 demo_hypersearchDL.py
+python3 demo_hypersearch_nn.py
 ```
 
-Also under the `demo/scripts` folder, the `demo_validate.py` file should be visible. This executes the bootstrap-based approach for training and internal validation of the Cox Proportional Hazards model for conventional (volumetric) parameters. A demo of this code (which uses simulated input data) can now be run :
+Also under the `demo/scripts` folder, the `demo_validate_nn.py` file should be visible. This executes the bootstrap-based
+ approach for training and internal validation of the deep learning network. This can be run (WARNING: this may take days to complete):
+ 
+```
+python3 demo_validate_nn.py
+```
+
+##### output
+`demo_validate_nn.py` will output the conf that it uses, all the hyperparams searched and found, and figures of c-index 
+vs more bootstrap samples in a `output_dir`, which by default is `output` folder under the data path directory. 
+
+
+Both `demo_hypersearch_nn.py` and `demo_validate_nn.py` takes a .conf file as an input argument. 
+If not provided, by default, it will uses `demo/scripts/default_nn.conf`.
+
+Such .conf file has the following structure:
+```
+experiment {
+  data_path = "../../data/inputdata_DL.pkl"
+  output_dir = None # If it is None, output dir would be `output` folder under the data path directory 
+  batch_size = 16
+  n_epochs = 100
+  n_evals = 50
+  n_bootstraps = 100
+  n_folds = 6
+  model_name = "baseline_autoencoder" # must be one of the function names in model_factory function of survival4D/models
+}
+
+
+# hyperparams search range define here.
+# Notice that value name has to match input arguments' names, defined in survival4D/models
+hypersearch {
+  lr_exp = [-6., -4.5]
+  loss_alpha = [0.3, 0.7]
+  dropout = [0.1, 0.5]
+  num_ae_units1 = [75, 250]
+  num_ae_units2 = [5, 20]
+  l1_reg_lambda_exp = [-7, -4]
+}
+```
+
+If a user wants to change any value in the .conf file, such as data_path for hypersearch. Create a `user.conf` file, and 
+copy from `default_nn.conf`, before making change to the values. Afterwards, run `demo_validate_nn.py` or `demo_hypersearch_nn.py`:
+```
+python3 demo_validate_nn.py -c /path-to-user.conf
+```
+
+```
+python3 demo_hypersearch_nn.py -c /path-to-user.conf
+```
+
+
+#### Train Cox Proportional Hazards model
+Under the `demo/scripts` folder, the `demo_validate.py` file should be visible. This executes the bootstrap-based
+ approach for training and internal validation of the Cox Proportional Hazards model for conventional (volumetric) 
+ parameters. A demo of this code (which uses simulated input data) can now be run :
 ```
 python3 demo_validate.py
 ```
 
-By default, all code in `demo/scripts` will use data from [data](data) directory. To point to a different data directory, 
-run the above commands with an additional option: `-d`, such as
+It takes a .conf file as an input argument. If not provided, by default, it will uses `demo/scripts/default_cox.conf`.
 
-    python3 demo_hypersearchDL.py -d /path-to-data-dir
+Such .conf file has the following structure:
+```
+experiment {
+  data_path = "../../data/inputdata_conv.pkl"
+  output_dir = None # If it is None, output dir would be `output` folder under the data path directory
+  batch_size = 16
+  n_epochs = 100
+  n_evals = 50
+  n_bootstraps = 100
+  n_folds = 6
+  model_name = "cox" # must be one of the function names in model_factory function of survival4D/models
+}
 
-You could also specify the data file name with option `-f`, such as
 
-    python3 demo_hypersearchDL.py -d /path-to-data-dir -f data.pkl
-    
+# hyperparams search range define here.
+# Notice that value name has to match input arguments' names, defined in survival4D/models
+hypersearch {
+  penalty_exp = [-2, 1]
+}
+```
+
+If a user wants to change any value in the .conf file, such as data_path for hypersearch. Create a `user.conf` file, and 
+copy from `default_nn.conf`, before making change to the values. Afterwards, run `demo_validate.py`:
+```
+python3 demo_validate.py -c /path-to-user.conf
+```
+
 
 ## Citations
 Bello GA, Dawes TJW, Duan J, Biffi C, de Marvao A, Howard LSGE, Gibbs JSR, Wilkins MR, Cook SA, Rueckert D, O'Regan DP. Deep-learning cardiac motion analysis for human survival prediction. *[Nature Machine Intelligence](https://doi.org/10.1038/s42256-019-0019-2)* 1, 
