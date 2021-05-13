@@ -1,11 +1,13 @@
 """
 @author: gbello & lisuru6
 How to run the code
-python demo_validateDL.py -d /path-to-data --output-dir /path-to-output-dir --n-evals 50 --dropout-max 0.9
+python demo_validateDL.py -c /path-to-conf
+
+Default conf uses demo/scripts/default_validate_DL.conf
 
 """
 import json
-from matplotlib import pyplot as plt
+import shutil
 from datetime import timedelta
 import pickle
 import numpy as np
@@ -13,48 +15,36 @@ from pathlib import Path
 from argparse import ArgumentParser
 from lifelines.utils import concordance_index
 
-from survival4D.trainDL import DL_single_run
-from survival4D.hypersearch import hypersearch_DL
-from survival4D.paths import DATA_DIR
+from survival4D.nn import train_nn, hypersearch_nn
+from survival4D.config import NNExperimentConfig, HypersearchConfig
 from matplotlib import pyplot as plt
+
+
+DEFAULT_CONF_PATH = Path(__file__).parent.joinpath("default_nn.conf")
 
 
 def parse_args():
     parser = ArgumentParser()
     parser.add_argument(
-        "-d", "--data-path", dest="data_path", type=str, default=None, help="Path where the data file is."
-    )
-    parser.add_argument(
-        "--output-dir", dest="output_dir", type=str, default=None, help="Directory where to output files."
-    )
-    parser.add_argument(
-        "--n-evals", dest="n_evals", type=int, default=50, help="Number of evaluations per each hyperparam fold."
-    )
-    parser.add_argument(
-        "--dropout-max", dest="dropout_max", type=float, default=0.9, help="Maximum dropout rate."
-    )
-    parser.add_argument(
-        "--n-bootstraps", dest="n_bootstraps", type=int, default=100, help="Number of bootstrap samples."
+        "-c", "--conf-path", dest="conf_path", type=str, default=None, help="Conf path."
     )
     return parser.parse_args()
 
 
 def main():
     args = parse_args()
-    if args.data_path is None:
-        data_path = DATA_DIR.joinpath("inputdata_DL.pkl")
+    if args.conf_path is None:
+        conf_path = DEFAULT_CONF_PATH
     else:
-        data_path = Path(args.data_path)
-    if args.output_dir is None:
-        output_dir = data_path.parent.joinpath("params_output")
-    else:
-        output_dir = Path(args.output_dir)
+        conf_path = Path(args.conf_path)
+    exp_config = NNExperimentConfig.from_conf(conf_path)
+    hypersearch_config = HypersearchConfig.from_conf(conf_path)
+    shutil.copy(conf_path, exp_config.output_dir.joinpath("nn.conf"))
+
     # import input data: i_full=list of patient IDs, y_full=censoring status and survival times for patients,
     # x_full=input data for patients (i.e. motion descriptors [11,514-element vector])
-    dropout_max = args.dropout_max
-    n_evals = args.n_evals
-    n_bootstraps = args.n_bootstraps
-    with open(str(data_path), 'rb') as f:
+
+    with open(str(exp_config.data_path), 'rb') as f:
         c3 = pickle.load(f)
     x_full = c3[0]
     y_full = c3[1]
@@ -68,23 +58,22 @@ def main():
     # STEP 1
     # (1a) find optimal hyperparameters
     print("Step 1a")
-    opars, osummary = hypersearch_DL(
-        x_data=x_full, y_data=y_full, method='particle swarm', nfolds=6, nevals=n_evals, lrexp_range=[-6., -4.5],
-        l1rexp_range=[-7, -4], dro_range=[.1, dropout_max], units1_range=[75, 250], units2_range=[5, 20],
-        alpha_range=[0.3, 0.7], batch_size=16, num_epochs=100
+    opars, osummary = hypersearch_nn(
+        x_data=x_full, y_data=y_full, method='particle swarm', nfolds=exp_config.n_folds, nevals=exp_config.n_evals,
+        batch_size=exp_config.batch_size, num_epochs=exp_config.n_epochs, **hypersearch_config.to_dict(),
     )
     # save opars
     print("Step b")
     # (1b) using optimal hyperparameters, train a model on full sample
-    olog = DL_single_run(
-        xtr=x_full, ytr=y_full, units1=opars['units1'], units2=opars['units2'], dro=opars['dro'],
-        lr=10**opars['lrexp'], l1r=10**opars['l1rexp'], alpha=opars['alpha'], batchsize=16, numepochs=100
+    olog = train_nn(
+        xtr=x_full, ytr=y_full, batch_size=exp_config.batch_size,
+        n_epochs=exp_config.n_epochs, model_name=exp_config.model_name, **opars
     )
 
     # (1c) Compute Harrell's Concordance index
     predfull = olog.model.predict(x_full, batch_size=1)[1]
     C_app = concordance_index(y_full[:, 1], -predfull, y_full[:, 0])
-    save_params(opars, osummary, "step_1a", output_dir, c_app=C_app)
+    save_params(opars, osummary, "step_1a", exp_config.output_dir, c_app=C_app)
     print('Apparent concordance index = {0:.4f}'.format(C_app))
 
     # BOOTSTRAP SAMPLING
@@ -92,7 +81,7 @@ def main():
     # define useful variables
     nsmp = len(x_full)
     rowids = [_ for _ in range(nsmp)]
-    B = n_bootstraps
+    B = exp_config.n_bootstraps
     plot_c_opts = []
     plot_c_adjs = []
     plot_bs_samples = []
@@ -109,20 +98,20 @@ def main():
 
         # (2a) find optimal hyperparameters
         print("Step 2a")
-        bpars, bsummary = hypersearch_DL(
-            x_data=xboot, y_data=yboot, method='particle swarm', nfolds=6, nevals=n_evals, lrexp_range=[-6., -4.5],
-            l1rexp_range=[-7, -4], dro_range=[.1, dropout_max], units1_range=[75, 250], units2_range=[5, 20],
-            alpha_range=[0.3, 0.7], batch_size=16, num_epochs=100
+        bpars, bsummary = hypersearch_nn(
+            x_data=x_full, y_data=y_full, method='particle swarm', nfolds=exp_config.n_folds, nevals=exp_config.n_evals,
+            batch_size=exp_config.batch_size, num_epochs=exp_config.n_epochs, **hypersearch_config.to_dict(),
         )
         # (2b) using optimal hyperparameters, train a model on bootstrap sample
-        blog = DL_single_run(
-            xtr=xboot, ytr=yboot, units1=bpars['units1'], units2=bpars['units2'], dro=bpars['dro'],
-            lr=10**bpars['lrexp'], l1r=10**bpars['l1rexp'], alpha=bpars['alpha'], batchsize=16, numepochs=100)
+        blog = train_nn(
+            xtr=x_full, ytr=y_full, batch_size=exp_config.batch_size,
+            n_epochs=exp_config.n_epochs, model_name=exp_config.model_name, **bpars
+        )
 
         # (2c[i])  Using bootstrap-trained model, compute predictions on bootstrap sample.
         # Evaluate accuracy of predictions (Harrell's Concordance index)
         predboot = blog.model.predict(xboot, batch_size=1)[1]
-        Cb_boot = concordance_index(yboot[:,1], -predboot, yboot[:, 0])
+        Cb_boot = concordance_index(yboot[:, 1], -predboot, yboot[:, 0])
 
         # (2c[ii]) Using bootstrap-trained model, compute predictions on FULL sample.
         # Evaluate accuracy of predictions (Harrell's Concordance index)
@@ -142,7 +131,7 @@ def main():
         print('Optimism bootstrap estimate = {0:.4f}'.format(c_opt))
         print('Optimism-adjusted concordance index = {0:.4f}, and 95% CI = {1}'.format(c_adj, c_opt_95confint))
         save_params(
-            bpars, bsummary, "bootstrap_{}".format(b), output_dir,
+            bpars, bsummary, "bootstrap_{}".format(b), exp_config.output_dir,
             c_opt=c_opt, c_adj=c_adj, c_opt_95confint=c_opt_95confint.tolist(),
             cb_boot=Cb_boot, cb_full=Cb_full, cb_opt=Cb_opt, c_app=C_app,
         )
@@ -154,7 +143,7 @@ def main():
         plot_c_adjs_lb.append(c_opt_95confint[0])
         plot_c_adjs_up.append(c_opt_95confint[1])
 
-        plot_c_indices(plot_bs_samples, plot_c_opts, plot_c_adjs, plot_c_adjs_lb, plot_c_adjs_up, C_app, output_dir)
+        plot_c_indices(plot_bs_samples, plot_c_opts, plot_c_adjs, plot_c_adjs_lb, plot_c_adjs_up, C_app, exp_config.output_dir)
         del bpars, blog
 
     # STEP 5
