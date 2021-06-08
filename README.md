@@ -51,7 +51,7 @@ should show `lisurui6/4dsurvival-gpu:1.0` on the list of Docker images on your l
 
 ### Run 4D*survival* Docker image
     
-    docker run -it 4dsurvival/4dsurvival:1.0 /bin/bash
+    docker run -it lisurui6/4dsurvival:1.0 /bin/bash
 
 launches an interactive linux shell terminal that gives users access to the image's internal file system. This file system contains all the code in this repository, along with the simulated data on which the code can be run.
 Typing 
