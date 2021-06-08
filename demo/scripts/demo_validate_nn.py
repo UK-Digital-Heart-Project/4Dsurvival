@@ -42,7 +42,7 @@ def main():
     hypersearch_config = HypersearchConfig.from_conf(conf_path)
     model_config = ModelConfig.from_conf(conf_path)
 
-    shutil.copy(conf_path, str(exp_config.output_dir.joinpath("nn.conf")))
+    shutil.copy(str(conf_path), str(exp_config.output_dir.joinpath("nn.conf")))
 
     # import input data: i_full=list of patient IDs, y_full=censoring status and survival times for patients,
     # x_full=input data for patients (i.e. motion descriptors [11,514-element vector])

@@ -33,7 +33,7 @@ def main():
     exp_config.output_dir.mkdir(parents=True, exist_ok=True)
 
     hypersearch_config = HypersearchConfig.from_conf(conf_path)
-    shutil.copy(conf_path, str(exp_config.output_dir.joinpath("cox.conf")))
+    shutil.copy(str(conf_path), str(exp_config.output_dir.joinpath("cox.conf")))
     args = parse_args()
     if args.data_dir is None:
         data_dir = DATA_DIR
