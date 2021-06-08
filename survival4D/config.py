@@ -1,3 +1,4 @@
+import os
 import json
 from pathlib import Path
 from pyhocon import ConfigTree, ConfigFactory
@@ -26,32 +27,34 @@ class BaseConfig:
 
 
 class ExperimentConfig(BaseConfig):
-    def __init__(self, data_path: Path, output_dir: Path, n_evals: int, n_bootstraps: int, n_folds: int):
+    def __init__(self, data_path: Path, output_dir: Path, n_evals: int, n_bootstraps: int, n_folds: int,
+                 search_method: str):
         self.data_path = data_path
         self.output_dir = output_dir
         self.n_evals = n_evals
         self.n_folds = n_folds
         self.n_bootstraps = n_bootstraps
+        self.search_method = search_method
 
 
 class NNExperimentConfig(ExperimentConfig):
     GROUP = "experiment"
 
     def __init__(
-            self, data_path: Path, output_dir: Path, n_evals: int, n_bootstraps: int, n_folds: int, batch_size: int,
-            n_epochs: int, model_name: str
+            self, data_path: Path, output_dir: Path, n_evals: int, n_bootstraps: int, n_folds: int, search_method: str,
+            batch_size: int, n_epochs: int,
     ):
         super().__init__(
-            data_path=data_path, output_dir=output_dir, n_evals=n_evals, n_bootstraps=n_bootstraps, n_folds=n_folds
+            data_path=data_path, output_dir=output_dir, n_evals=n_evals, n_bootstraps=n_bootstraps, n_folds=n_folds,
+            search_method=search_method
         )
         self.batch_size = batch_size
         self.n_epochs = n_epochs
-        self.model_name = model_name
 
     @classmethod
     def from_conf(cls, conf_path):
         conf = ConfigFactory.parse_file(str(conf_path))
-        data_path = Path(get_conf(conf, group=cls.GROUP, key="data_path"))
+        data_path = Path(os.path.abspath(get_conf(conf, group=cls.GROUP, key="data_path")))
         if get_conf(conf, group=cls.GROUP, key="output_dir") is None:
             output_dir = data_path.parent.joinpath("output")
         else:
@@ -64,23 +67,25 @@ class NNExperimentConfig(ExperimentConfig):
             n_evals=get_conf(conf, group=cls.GROUP, key="n_evals", default=50),
             n_bootstraps=get_conf(conf, group=cls.GROUP, key="n_bootstraps", default=100),
             n_folds=get_conf(conf, group=cls.GROUP, key="n_folds", default=6),
-            model_name=get_conf(conf, group=cls.GROUP, key="model_name", default="baseline_autoencoder")
+            search_method=get_conf(conf, group=cls.GROUP, key="search_method", default="particle swarm")
         )
 
 
 class CoxExperimentConfig(ExperimentConfig):
     def __init__(
-            self, data_path: Path, output_dir: Path, n_evals: int, n_bootstraps: int, n_folds: int, penalty_exp: int
+            self, data_path: Path, output_dir: Path, n_evals: int, n_bootstraps: int, n_folds: int, search_method: str,
+            penalty_exp: int
     ):
         super().__init__(
-            data_path=data_path, output_dir=output_dir, n_evals=n_evals, n_bootstraps=n_bootstraps, n_folds=n_folds
+            data_path=data_path, output_dir=output_dir, n_evals=n_evals, n_bootstraps=n_bootstraps, n_folds=n_folds,
+            search_method=search_method,
         )
         self.penalty_exp = penalty_exp
 
     @classmethod
     def from_conf(cls, conf_path):
         conf = ConfigFactory.parse_file(str(conf_path))
-        data_path = Path(get_conf(conf, group=cls.GROUP, key="data_path"))
+        data_path = Path(os.path.abspath(get_conf(conf, group=cls.GROUP, key="data_path")))
         if get_conf(conf, group=cls.GROUP, key="output_dir") is None:
             output_dir = data_path.parent.joinpath("output")
         else:
@@ -91,7 +96,8 @@ class CoxExperimentConfig(ExperimentConfig):
             n_evals=get_conf(conf, group=cls.GROUP, key="n_evals", default=50),
             n_bootstraps=get_conf(conf, group=cls.GROUP, key="n_bootstraps", default=100),
             n_folds=get_conf(conf, group=cls.GROUP, key="n_folds", default=6),
-            penalty_exp=get_conf(conf, group=cls.GROUP, key="penalty_exp", default=[-2, 1])
+            penalty_exp=get_conf(conf, group=cls.GROUP, key="penalty_exp", default=[-2, 1]),
+            search_method=get_conf(conf, group=cls.GROUP, key="search_method", default="particle swarm")
         )
 
 
@@ -109,5 +115,15 @@ class HypersearchConfig(BaseConfig):
         return cls(**conf)
 
 
-config = HypersearchConfig.from_conf(Path(__file__).parent.parent.joinpath("demo", "scripts", "default_validate_DL.conf"))
-print(config)
+class ModelConfig(BaseConfig):
+    GROUP = "model"
+
+    def __init__(self, **kwargs):
+        for key in kwargs:
+            setattr(self, key, kwargs[key])
+
+    @classmethod
+    def from_conf(cls, conf_path: Path):
+        conf = ConfigFactory.parse_file(str(conf_path))
+        conf = getattr(conf, cls.GROUP)
+        return cls(**conf)

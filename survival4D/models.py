@@ -6,15 +6,15 @@ from keras.layers import Input, BatchNormalization, Activation
 from keras.layers.core import Dense, Dropout
 from keras.optimizers import Adam
 from keras.regularizers import l1
-from survival4D.nn import _negative_log_likelihood
 
 
 def compile_model(model, lr_exp, alpha):
+    from survival4D.nn import negative_log_likelihood
     model.summary()
     # Model compilation
     optimdef = Adam(lr=10**lr_exp)
     model.compile(
-        loss=[keras.losses.mean_squared_error, _negative_log_likelihood],
+        loss=[keras.losses.mean_squared_error, negative_log_likelihood],
         loss_weights=[alpha, 1 - alpha],
         optimizer=optimdef,
         metrics={'decoded': keras.metrics.mean_squared_error}

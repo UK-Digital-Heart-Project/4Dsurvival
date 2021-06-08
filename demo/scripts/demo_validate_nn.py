@@ -16,7 +16,7 @@ from argparse import ArgumentParser
 from lifelines.utils import concordance_index
 
 from survival4D.nn import train_nn, hypersearch_nn
-from survival4D.config import NNExperimentConfig, HypersearchConfig
+from survival4D.config import NNExperimentConfig, HypersearchConfig, ModelConfig
 from matplotlib import pyplot as plt
 
 
@@ -38,7 +38,10 @@ def main():
     else:
         conf_path = Path(args.conf_path)
     exp_config = NNExperimentConfig.from_conf(conf_path)
+    exp_config.output_dir.mkdir(parents=True, exist_ok=True)
     hypersearch_config = HypersearchConfig.from_conf(conf_path)
+    model_config = ModelConfig.from_conf(conf_path)
+
     shutil.copy(conf_path, exp_config.output_dir.joinpath("nn.conf"))
 
     # import input data: i_full=list of patient IDs, y_full=censoring status and survival times for patients,
@@ -59,15 +62,26 @@ def main():
     # (1a) find optimal hyperparameters
     print("Step 1a")
     opars, osummary = hypersearch_nn(
-        x_data=x_full, y_data=y_full, method='particle swarm', nfolds=exp_config.n_folds, nevals=exp_config.n_evals,
-        batch_size=exp_config.batch_size, num_epochs=exp_config.n_epochs, **hypersearch_config.to_dict(),
+        x_data=x_full,
+        y_data=y_full,
+        method=exp_config.search_method,
+        nfolds=exp_config.n_folds,
+        nevals=exp_config.n_evals,
+        batch_size=exp_config.batch_size,
+        num_epochs=exp_config.n_epochs,
+        model_kwargs=model_config.to_dict(),
+        **hypersearch_config.to_dict(),
     )
     # save opars
     print("Step b")
     # (1b) using optimal hyperparameters, train a model on full sample
     olog = train_nn(
-        xtr=x_full, ytr=y_full, batch_size=exp_config.batch_size,
-        n_epochs=exp_config.n_epochs, model_name=exp_config.model_name, **opars
+        xtr=x_full,
+        ytr=y_full,
+        batch_size=exp_config.batch_size,
+        n_epochs=exp_config.n_epochs,
+        **model_config.to_dict(),
+        **opars,
     )
 
     # (1c) Compute Harrell's Concordance index
@@ -99,13 +113,25 @@ def main():
         # (2a) find optimal hyperparameters
         print("Step 2a")
         bpars, bsummary = hypersearch_nn(
-            x_data=x_full, y_data=y_full, method='particle swarm', nfolds=exp_config.n_folds, nevals=exp_config.n_evals,
-            batch_size=exp_config.batch_size, num_epochs=exp_config.n_epochs, **hypersearch_config.to_dict(),
+            x_data=xboot,
+            y_data=xboot,
+            method=exp_config.search_method,
+            nfolds=exp_config.n_folds,
+            nevals=exp_config.n_evals,
+            batch_size=exp_config.batch_size,
+            num_epochs=exp_config.n_epochs,
+            model_kwargs=model_config.to_dict(),
+            **hypersearch_config.to_dict(),
         )
         # (2b) using optimal hyperparameters, train a model on bootstrap sample
         blog = train_nn(
-            xtr=x_full, ytr=y_full, batch_size=exp_config.batch_size,
-            n_epochs=exp_config.n_epochs, model_name=exp_config.model_name, **bpars
+            xtr=xboot,
+            ytr=xboot,
+            batch_size=exp_config.batch_size,
+            n_epochs=exp_config.n_epochs,
+            model_name=exp_config.model_name,
+            **model_config.to_dict(),
+            **bpars
         )
 
         # (2c[i])  Using bootstrap-trained model, compute predictions on bootstrap sample.

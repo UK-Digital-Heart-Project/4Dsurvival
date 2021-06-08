@@ -24,7 +24,7 @@ def sort4minibatches(xvals, evals, tvals, batchsize):
     return xvals[esall], evals[esall], tvals[esall], esall
 
 
-def _negative_log_likelihood(E, risk):
+def negative_log_likelihood(E, risk):
     """
     Define Cox PH partial likelihood function loss.
     Arguments: E (censoring status), risk (risk [log hazard ratio] predicted by network) for batch of input subjects
@@ -64,11 +64,11 @@ def train_nn(xtr, ytr, batch_size, n_epochs, model_name, **model_kwargs):
 
 
 # 1. Hyperparameter search for Deep Learning model
-def hypersearch_nn(x_data, y_data, method, nfolds, nevals, batch_size, num_epochs, model_name: str, **hypersearch):
+def hypersearch_nn(x_data, y_data, method, nfolds, nevals, batch_size, num_epochs, model_kwargs: dict, **hypersearch):
     @optunity.cross_validated(x=x_data, y=y_data, num_folds=nfolds)
     def modelrun(x_train, y_train, x_test, y_test, **hypersearch):
         cv_log = train_nn(
-            xtr=x_train, ytr=y_train, batch_size=batch_size, n_epochs=num_epochs, model_name=model_name, **hypersearch
+            xtr=x_train, ytr=y_train, batch_size=batch_size, n_epochs=num_epochs, **model_kwargs, **hypersearch
         )
         cv_preds = cv_log.model.predict(x_test, batch_size=1)[1]
         cv_C = concordance_index(y_test[:, 1], -cv_preds, y_test[:, 0])

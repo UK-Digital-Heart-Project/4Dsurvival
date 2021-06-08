@@ -30,6 +30,8 @@ def main():
     else:
         conf_path = Path(args.conf_path)
     exp_config = CoxExperimentConfig.from_conf(conf_path)
+    exp_config.output_dir.mkdir(parents=True, exist_ok=True)
+
     hypersearch_config = HypersearchConfig.from_conf(conf_path)
     shutil.copy(conf_path, exp_config.output_dir.joinpath("cox.conf"))
     args = parse_args()
