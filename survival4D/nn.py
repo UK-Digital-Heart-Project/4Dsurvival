@@ -48,7 +48,7 @@ def train_nn(xtr, ytr, batch_size, n_epochs, model_name, **model_kwargs):
 
     # Arrange data into minibatches (based on specified batch size), and within each minibatch,
     # sort in descending order of survival/censoring time (see explanation of Cox PH loss function definition)
-    X_tr, E_tr, TM_tr, _ = sort4minibatches(X_tr, E_tr, TM_tr, batch_size)
+    # X_tr, E_tr, TM_tr, _ = sort4minibatches(X_tr, E_tr, TM_tr, batch_size)
 
     # specify input dimensionality
     inpshape = xtr.shape[1]
