@@ -129,7 +129,6 @@ def main():
             ytr=xboot,
             batch_size=exp_config.batch_size,
             n_epochs=exp_config.n_epochs,
-            model_name=exp_config.model_name,
             **model_config.to_dict(),
             **bpars
         )
