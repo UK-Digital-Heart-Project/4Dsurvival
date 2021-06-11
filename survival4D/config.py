@@ -42,7 +42,7 @@ class NNExperimentConfig(ExperimentConfig):
 
     def __init__(
             self, data_path: Path, output_dir: Path, n_evals: int, n_bootstraps: int, n_folds: int, search_method: str,
-            batch_size: int, n_epochs: int,
+            batch_size: int, n_epochs: int, backend: str
     ):
         super().__init__(
             data_path=data_path, output_dir=output_dir, n_evals=n_evals, n_bootstraps=n_bootstraps, n_folds=n_folds,
@@ -50,6 +50,7 @@ class NNExperimentConfig(ExperimentConfig):
         )
         self.batch_size = batch_size
         self.n_epochs = n_epochs
+        self.backend = backend
 
     @classmethod
     def from_conf(cls, conf_path):
@@ -67,7 +68,8 @@ class NNExperimentConfig(ExperimentConfig):
             n_evals=get_conf(conf, group=cls.GROUP, key="n_evals", default=50),
             n_bootstraps=get_conf(conf, group=cls.GROUP, key="n_bootstraps", default=100),
             n_folds=get_conf(conf, group=cls.GROUP, key="n_folds", default=6),
-            search_method=get_conf(conf, group=cls.GROUP, key="search_method", default="particle swarm")
+            search_method=get_conf(conf, group=cls.GROUP, key="search_method", default="particle swarm"),
+            backend=get_conf(conf, group=cls.GROUP, key="backend", default="torch")
         )
 
 

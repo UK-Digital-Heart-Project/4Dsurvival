@@ -8,23 +8,8 @@ from keras.optimizers import Adam
 from keras.regularizers import l1
 
 
-def compile_model(model, lr_exp, alpha):
-    from survival4D.nn import negative_log_likelihood
-    model.summary()
-    # Model compilation
-    optimdef = Adam(lr=10**lr_exp)
-    model.compile(
-        loss=[keras.losses.mean_squared_error, negative_log_likelihood],
-        loss_weights=[alpha, 1 - alpha],
-        optimizer=optimdef,
-        metrics={'decoded': keras.metrics.mean_squared_error}
-    )
-    return model
-
-
 def baseline_autoencoder(
-        input_shape: Tuple, dropout: float, num_ae_units1: int, num_ae_units2: int, l1_reg_lambda_exp: float,
-        lr_exp: float, alpha: float,
+    input_shape: Tuple, dropout: float, num_ae_units1: int, num_ae_units2: int, l1_reg_lambda_exp: float,
 ) -> Model:
     """Baseline autoencoder as published in https://www.nature.com/articles/s42256-019-0019-2"""
     inputvec = Input(shape=(input_shape,))
@@ -36,13 +21,11 @@ def baseline_autoencoder(
     decoded = Dense(units=input_shape, activation='linear', name='decoded')(z)
 
     model = Model(inputs=inputvec, outputs=[decoded, risk_pred])
-    model = compile_model(model, lr_exp=lr_exp, alpha=alpha)
     return model
 
 
 def baseline_bn_autoencoder(
-        input_shape: Tuple, dropout: float, num_ae_units1: int, num_ae_units2: int, l1_reg_lambda_exp: float,
-        lr_exp: float, alpha: float,
+    input_shape: Tuple, dropout: float, num_ae_units1: int, num_ae_units2: int, l1_reg_lambda_exp: float,
 ) -> Model:
     """Add batch normalization to each layer before relu activation, based on baseline_autoencoder."""
     inputvec = Input(shape=(input_shape,))
@@ -65,13 +48,12 @@ def baseline_bn_autoencoder(
     decoded = Dense(units=input_shape, activation='linear', name='decoded')(z)
 
     model = Model(inputs=inputvec, outputs=[decoded, risk_pred])
-    model = compile_model(model, lr_exp=lr_exp, alpha=alpha)
     return model
 
 
 def model3_bn_autoencoder(
-        input_shape: Tuple, dropout: float, num_ae_units1: int, num_ae_units2: int, num_risk_units: int,
-        l1_reg_lambda_exp: float, lr_exp: float, alpha: float,
+    input_shape: Tuple, dropout: float, num_ae_units1: int, num_ae_units2: int, num_risk_units: int,
+    l1_reg_lambda_exp: float,
 ) -> Model:
     """
     Add one more relu layer between encoded and risk_pred, based on baseline_bn_autoencoder.
@@ -101,13 +83,12 @@ def model3_bn_autoencoder(
     decoded = Dense(units=input_shape, activation='linear', name='decoded')(z)
 
     model = Model(inputs=inputvec, outputs=[decoded, risk_pred])
-    model = compile_model(model, lr_exp=lr_exp, alpha=alpha)
     return model
 
 
 def deep_model3_bn_autoencoder(
-        input_shape: Tuple, dropout: float, num_ae_units1: int, num_ae_units2: int, num_ae_units3: int,
-        num_risk_units: int, l1_reg_lambda_exp: float, lr_exp: float, alpha: float,
+    input_shape: Tuple, dropout: float, num_ae_units1: int, num_ae_units2: int, num_ae_units3: int,
+    num_risk_units: int, l1_reg_lambda_exp: float,
 ) -> Model:
     """
     Add one more relu layer in autoencoder, based on model3_bn_autoencoder.
@@ -145,7 +126,6 @@ def deep_model3_bn_autoencoder(
     decoded = Dense(units=input_shape, activation='linear', name='decoded')(z)
 
     model = Model(inputs=inputvec, outputs=[decoded, risk_pred])
-    model = compile_model(model, lr_exp=lr_exp, alpha=alpha)
     return model
 
 

@@ -15,7 +15,8 @@ from pathlib import Path
 from argparse import ArgumentParser
 from lifelines.utils import concordance_index
 
-from survival4D.nn import train_nn, hypersearch_nn
+from survival4D.nn import hypersearch_nn
+from survival4D.nn import train_nn
 from survival4D.config import NNExperimentConfig, HypersearchConfig, ModelConfig
 from matplotlib import pyplot as plt
 
@@ -69,6 +70,7 @@ def main():
         nevals=exp_config.n_evals,
         batch_size=exp_config.batch_size,
         num_epochs=exp_config.n_epochs,
+        backend=exp_config.backend,
         model_kwargs=model_config.to_dict(),
         **hypersearch_config.to_dict(),
     )
@@ -76,6 +78,7 @@ def main():
     print("Step b")
     # (1b) using optimal hyperparameters, train a model on full sample
     olog = train_nn(
+        backend=exp_config.backend,
         xtr=x_full,
         ytr=y_full,
         batch_size=exp_config.batch_size,
@@ -85,7 +88,7 @@ def main():
     )
 
     # (1c) Compute Harrell's Concordance index
-    predfull = olog.model.predict(x_full, batch_size=1)[1]
+    predfull = olog.predict(x_full, batch_size=1)[1]
     C_app = concordance_index(y_full[:, 1], -predfull, y_full[:, 0])
     save_params(opars, osummary, "step_1a", exp_config.output_dir, c_app=C_app)
     print('Apparent concordance index = {0:.4f}'.format(C_app))
@@ -112,35 +115,37 @@ def main():
 
         # (2a) find optimal hyperparameters
         print("Step 2a")
-        bpars, bsummary = hypersearch_nn(
-            x_data=xboot,
-            y_data=xboot,
-            method=exp_config.search_method,
-            nfolds=exp_config.n_folds,
-            nevals=exp_config.n_evals,
-            batch_size=exp_config.batch_size,
-            num_epochs=exp_config.n_epochs,
-            model_kwargs=model_config.to_dict(),
-            **hypersearch_config.to_dict(),
-        )
+        # bpars, bsummary = hypersearch_nn(
+        #     backend=exp_config.backend,
+        #     x_data=xboot,
+        #     y_data=yboot,
+        #     method=exp_config.search_method,
+        #     nfolds=exp_config.n_folds,
+        #     nevals=exp_config.n_evals,
+        #     batch_size=exp_config.batch_size,
+        #     num_epochs=exp_config.n_epochs,
+        #     model_kwargs=model_config.to_dict(),
+        #     **hypersearch_config.to_dict(),
+        # )
         # (2b) using optimal hyperparameters, train a model on bootstrap sample
         blog = train_nn(
+            backend=exp_config.backend,
             xtr=xboot,
-            ytr=xboot,
+            ytr=yboot,
             batch_size=exp_config.batch_size,
             n_epochs=exp_config.n_epochs,
             **model_config.to_dict(),
-            **bpars
+            **opars
         )
 
         # (2c[i])  Using bootstrap-trained model, compute predictions on bootstrap sample.
         # Evaluate accuracy of predictions (Harrell's Concordance index)
-        predboot = blog.model.predict(xboot, batch_size=1)[1]
+        predboot = blog.predict(xboot, batch_size=1)[1]
         Cb_boot = concordance_index(yboot[:, 1], -predboot, yboot[:, 0])
 
         # (2c[ii]) Using bootstrap-trained model, compute predictions on FULL sample.
         # Evaluate accuracy of predictions (Harrell's Concordance index)
-        predbootfull = blog.model.predict(x_full, batch_size=1)[1]
+        predbootfull = blog.predict(x_full, batch_size=1)[1]
         Cb_full = concordance_index(y_full[:, 1], -predbootfull, y_full[:, 0])
 
         # STEP 3: Compute optimism for bth bootstrap sample, as difference between results from 2c[i] and 2c[ii]
@@ -156,7 +161,7 @@ def main():
         print('Optimism bootstrap estimate = {0:.4f}'.format(c_opt))
         print('Optimism-adjusted concordance index = {0:.4f}, and 95% CI = {1}'.format(c_adj, c_opt_95confint))
         save_params(
-            bpars, bsummary, "bootstrap_{}".format(b), exp_config.output_dir,
+            opars, osummary, "bootstrap_{}".format(b), exp_config.output_dir,
             c_opt=c_opt, c_adj=c_adj, c_opt_95confint=c_opt_95confint.tolist(),
             cb_boot=Cb_boot, cb_full=Cb_full, cb_opt=Cb_opt, c_app=C_app,
         )
@@ -169,7 +174,9 @@ def main():
         plot_c_adjs_up.append(c_opt_95confint[1])
 
         plot_c_indices(plot_bs_samples, plot_c_opts, plot_c_adjs, plot_c_adjs_lb, plot_c_adjs_up, C_app, exp_config.output_dir)
-        del bpars, blog
+        # del bpars, blog
+        del blog
+
 
     # STEP 5
     # Compute bootstrap-estimated optimism (mean of optimism estimates across the B bootstrap samples)
