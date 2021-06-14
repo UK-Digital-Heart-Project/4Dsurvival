@@ -1,0 +1,5 @@
+**/output/
+*.egg-info/
+**/.DS_Store
+**/.idea
+output/
