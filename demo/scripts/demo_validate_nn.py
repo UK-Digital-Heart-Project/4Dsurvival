@@ -115,18 +115,18 @@ def main():
 
         # (2a) find optimal hyperparameters
         print("Step 2a")
-        # bpars, bsummary = hypersearch_nn(
-        #     backend=exp_config.backend,
-        #     x_data=xboot,
-        #     y_data=yboot,
-        #     method=exp_config.search_method,
-        #     nfolds=exp_config.n_folds,
-        #     nevals=exp_config.n_evals,
-        #     batch_size=exp_config.batch_size,
-        #     num_epochs=exp_config.n_epochs,
-        #     model_kwargs=model_config.to_dict(),
-        #     **hypersearch_config.to_dict(),
-        # )
+        bpars, bsummary = hypersearch_nn(
+            backend=exp_config.backend,
+            x_data=xboot,
+            y_data=yboot,
+            method=exp_config.search_method,
+            nfolds=exp_config.n_folds,
+            nevals=exp_config.n_evals,
+            batch_size=exp_config.batch_size,
+            num_epochs=exp_config.n_epochs,
+            model_kwargs=model_config.to_dict(),
+            **hypersearch_config.to_dict(),
+        )
         # (2b) using optimal hyperparameters, train a model on bootstrap sample
         blog = train_nn(
             backend=exp_config.backend,
@@ -135,7 +135,7 @@ def main():
             batch_size=exp_config.batch_size,
             n_epochs=exp_config.n_epochs,
             **model_config.to_dict(),
-            **opars
+            **bpars
         )
 
         # (2c[i])  Using bootstrap-trained model, compute predictions on bootstrap sample.
@@ -161,7 +161,7 @@ def main():
         print('Optimism bootstrap estimate = {0:.4f}'.format(c_opt))
         print('Optimism-adjusted concordance index = {0:.4f}, and 95% CI = {1}'.format(c_adj, c_opt_95confint))
         save_params(
-            opars, osummary, "bootstrap_{}".format(b), exp_config.output_dir,
+            bpars, bsummary, "bootstrap_{}".format(b), exp_config.output_dir,
             c_opt=c_opt, c_adj=c_adj, c_opt_95confint=c_opt_95confint.tolist(),
             cb_boot=Cb_boot, cb_full=Cb_full, cb_opt=Cb_opt, c_app=C_app,
         )
