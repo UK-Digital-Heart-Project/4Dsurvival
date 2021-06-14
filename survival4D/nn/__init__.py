@@ -49,5 +49,5 @@ def train_nn(backend: str, xtr, ytr, batch_size, n_epochs, model_name, lr_exp, a
     elif backend == "torch":
         from survival4D.nn.torch import train_nn
     else:
-        raise ValueError(f"Backend {backend} not supported. Only tf or torch. ")
+        raise ValueError("Backend {} not supported. Only tf or torch. ".format(backend))
     return train_nn(xtr, ytr, batch_size, n_epochs, model_name, lr_exp, alpha, **model_kwargs)
