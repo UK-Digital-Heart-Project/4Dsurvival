@@ -174,8 +174,6 @@ def main():
         plot_c_adjs_up.append(c_opt_95confint[1])
 
         plot_c_indices(plot_bs_samples, plot_c_opts, plot_c_adjs, plot_c_adjs_lb, plot_c_adjs_up, C_app, exp_config.output_dir)
-        # del bpars, blog
-        del blog
 
 
     # STEP 5

@@ -37,10 +37,10 @@ A Docker image is available for running the code available in the [demo](demo) d
 ### Install Docker
 Running our 4D*survival* Docker image requires installation of the Docker software, instructions are available at https://docs.docker.com/install/ 
 
-### Download 4D*survival* Docker image (CPU)
+### Download 4D*survival* Docker image (GPU)
 Once the Docker software has been installed, our 4D*survival* Docker image can be pulled from the Docker hub using the following command:
     
-    docker pull lisurui6/4dsurvival-gpu:1.0
+    docker pull lisurui6/4dsurvival-gpu:1.1
 
 Once the image download is complete, open up a command-line terminal. On Windows operating systems, this would be the *Command Prompt* (cmd.exe), accessible by opening the [Run Command utility](https://en.wikipedia.org/wiki/Run_command) using the shortcut key `Win`+`R` and then typing `cmd`. On Mac OS, the terminal is accessible via (Finder > Applications > Utilities > Terminal). On Linux systems, any terminal can be used.
 Once a terminal is open, running the following command:
@@ -50,10 +50,11 @@ Once a terminal is open, running the following command:
 should show `lisurui6/4dsurvival-gpu:1.0` on the list of Docker images on your local system
 
 ### Run 4D*survival* Docker image
-    
-    docker run -it lisurui6/4dsurvival:1.0 /bin/bash
+To be able to utilise GPU in docker container, run
 
-launches an interactive linux shell terminal that gives users access to the image's internal file system. This file system contains all the code in this repository, along with the simulated data on which the code can be run.
+    nvidia-docker run -it lisurui6/4dsurvival:1.1
+
+This launches an interactive linux shell terminal that gives users access to the image's internal file system. This file system contains all the code in this repository, along with the simulated data on which the code can be run.
 Typing 
 ```
 ls -l
@@ -61,15 +62,7 @@ ls -l
 will list all the folders in the working directory of the Docker image (/4DSurv). You should see the 3 main folders `code`, `data` and `demo`, which contain the same files as the corresponding folders with the same name in this github repository.
 
 
-To be able to utilise GPU in docker container, run the GPU docker image 
-
-    nvidia-docker run -ti lisurui6/4dsurvival:1.0
-
-Dockerfile for build the GPU image is described in [docker/gpu/1.0/Dockerfile](docker/gpu/1.0/Dockerfile).
-
-To use the docker image with the latest lifelines, pull from `lisurui6/4dsurvival-gpu:1.1`.
-
-Dockerfile is described in [docker/gpu/1.1/Dockerfile](docker/gpu/1.1/Dockerfile).
+Dockerfile for build the GPU image is described in [Dockerfile](Dockerfile).
 
 In the docker image, `survival4D` has already installed, so that you can run the following python command anywhere. 
 If you are running outside of docker, and want to install the package, from the 4Dsurvival directory, do:
@@ -79,6 +72,46 @@ If you are running outside of docker, and want to install the package, from the 
 `develop` command allows you to makes changes to the code and do not need to reinstall for the changes to be applied. 
 
 
+#### For developer, on running 4Dsurival experiments using docker image
+This section is dedicated on instructions and best practices to run 4DS experiments with docker. 
+First, although the docker image contains 4DS code, it is best to mount the code from your local file system, 
+so that you can easily change the code using your favorite editor, and push/pull changes to/from github. 
+
+Second, to have access to your data inside the docker image, you need to mount your data from your local file system as well. 
+
+Lastly, you need to mount a experiment directory, where your experiment .conf file is and your experiment output will be. 
+
+A typical command for launching a docker container for running experiment would be
+
+    nvidia-docker run -it -v /path-to-your-data:/data -v /path-to-your-4ds-code:/4DSurvival -v /path-to-your-experiment-dir:/exp-dir/ lisurui6/4dsurvival:1.1
+    
+
+Now outside the docker container, you need to create a .conf file in `/path-to-your-experiment-dir/exp-name.conf`, similar to [demo/scripts/default_nn.conf](demo/scripts/default_nn.conf) or 
+[demo/scripts/default_cox.conf](demo/scripts/default_cox.conf). Change the `data_path` and `output_dir` to
+
+    experiment {
+      data_path = "/data/data-filename.pkl"
+      output_dir = "/exp-dir/exp-name/"
+    
+Then inside the docker container,
+
+    cd /4DSurvival
+    python setup.py develop
+    cd demo/scripts/
+    CUDA_VISIBLE_DEVICES=0 python demo_validate_nn.py -c /exp-dir/exp-name.conf
+    
+#### More on the .conf file
+
+.conf file specifies experiment parameters, including experiment configuration, hyperparam search range, and model arguments (for neural network only).
+
+Experiment configurations are under the umbrella of `experiment` group. It includes data path, output directory, hyperparam search method, etc.
+
+Hyperparam search ranges are under the umbrella of `hypersearch` group. It indicates param names and their ranges.
+
+Model arguments (for nn only), are parameters of the model that are fixed. Either they cannot be searched on, or we do no wish to search them. 
+
+Between `hypersearch` and `model`, they should contains all the arguments needed for constructing a model.
+    
 Below we will demonstrate how to perform (within the Docker image) the following analyses:
 - [x] Train deep learning network
 - [x] Train and validate conventional parameter model
@@ -88,7 +121,6 @@ From the 4Dsurvival directory, navigate to the `demo/scripts` directory by typin
 cd demo/scripts
 ls -l
 ```
-
 
 #### Train deep learning network
 
