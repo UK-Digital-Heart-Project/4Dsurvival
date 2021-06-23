@@ -56,6 +56,7 @@ def main():
 
     # Initialize lists to store predictions
     c_vals = []
+    c_trains = []
 
     kf = KFold(n_splits=exp_config.n_folds)
     i = 0
@@ -90,13 +91,22 @@ def main():
         )
 
         # (1c) Compute Harrell's Concordance index
-        predfull = olog.predict(x_val, batch_size=1)[1]
-        c_val = concordance_index(y_val[:, 1], -predfull, y_val[:, 0])
-        save_params(opars, osummary, "cv_{}".format(i), exp_config.output_dir, c_val=c_val)
+        pred_val = olog.predict(x_val, batch_size=1)[1]
+        c_val = concordance_index(y_val[:, 1], -pred_val, y_val[:, 0])
+
+        pred_train = olog.predict(x_train, batch_size=1)[1]
+        c_train = concordance_index(y_train[:, 1], -pred_train, y_train[:, 0])
+        save_params(
+            opars, osummary, "cv_{}".format(i), exp_config.output_dir,
+            c_val=c_val, c_train=c_train,
+            c_val_mean=np.mean(c_vals), c_val_var=np.var(c_vals),
+            c_train_mean=np.mean(c_trains), c_train_var=np.var(c_trains)
+        )
         print('Validation concordance index = {0:.4f}'.format(c_val))
         i += 1
         c_vals.append(c_val)
-        plot_c_vals(c_vals, exp_config.output_dir)
+        c_trains.append(c_train)
+        plot_cs(c_trains, c_vals, exp_config.output_dir)
     print('Mean Validation concordance index = {0:.4f}'.format(np.mean(c_vals)))
     print('Variance = {0:.4f}'.format(np.var(c_vals)))
 
@@ -126,11 +136,13 @@ def compute_bootstrap_adjusted_c_index(C_app, Cb_opts):
     return C_opt, C_adj, C_opt_95confint
 
 
-def plot_c_vals(c_vals, output_dir):
+def plot_cs(c_trains, c_vals, output_dir):
     plt.figure()
     plt.title("CV validation, mean={:.4f}, var={:.4f}".format(np.mean(c_vals), np.var(c_vals)))
     plt.plot(range(len(c_vals)), c_vals, 'rx-')
-    plt.savefig(str(output_dir.joinpath("c_adj.png")))
+
+    plt.plot(range(len(c_trains)), c_trains, 'bx-')
+    plt.savefig(str(output_dir.joinpath("c_train_val.png")))
 
 
 if __name__ == '__main__':
