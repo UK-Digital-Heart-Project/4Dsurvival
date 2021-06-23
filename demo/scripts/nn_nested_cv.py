@@ -96,6 +96,8 @@ def main():
 
         pred_train = olog.predict(x_train, batch_size=1)[1]
         c_train = concordance_index(y_train[:, 1], -pred_train, y_train[:, 0])
+        c_vals.append(c_val)
+        c_trains.append(c_train)
         save_params(
             opars, osummary, "cv_{}".format(i), exp_config.output_dir,
             c_val=c_val, c_train=c_train,
@@ -104,8 +106,6 @@ def main():
         )
         print('Validation concordance index = {0:.4f}'.format(c_val))
         i += 1
-        c_vals.append(c_val)
-        c_trains.append(c_train)
         plot_cs(c_trains, c_vals, exp_config.output_dir)
     print('Mean Validation concordance index = {0:.4f}'.format(np.mean(c_vals)))
     print('Variance = {0:.4f}'.format(np.var(c_vals)))
