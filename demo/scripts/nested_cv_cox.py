@@ -17,7 +17,7 @@ from lifelines.utils import concordance_index
 
 from survival4D.cox_reg import hypersearch_cox
 from survival4D.cox_reg import train_cox_reg
-from survival4D.config import ExperimentConfig, HypersearchConfig, ModelConfig
+from survival4D.config import CoxExperimentConfig, HypersearchConfig
 from matplotlib import pyplot as plt
 from sklearn.model_selection import KFold
 
@@ -38,7 +38,7 @@ def main():
         conf_path = DEFAULT_CONF_PATH
     else:
         conf_path = Path(args.conf_path)
-    exp_config = ExperimentConfig.from_conf(conf_path)
+    exp_config = CoxExperimentConfig.from_conf(conf_path)
     exp_config.output_dir.mkdir(parents=True, exist_ok=True)
     hypersearch_config = HypersearchConfig.from_conf(conf_path)
 

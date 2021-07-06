@@ -74,16 +74,6 @@ class NNExperimentConfig(ExperimentConfig):
 
 
 class CoxExperimentConfig(ExperimentConfig):
-    def __init__(
-            self, data_path: Path, output_dir: Path, n_evals: int, n_bootstraps: int, n_folds: int, search_method: str,
-            penalty_exp: int
-    ):
-        super().__init__(
-            data_path=data_path, output_dir=output_dir, n_evals=n_evals, n_bootstraps=n_bootstraps, n_folds=n_folds,
-            search_method=search_method,
-        )
-        self.penalty_exp = penalty_exp
-
     @classmethod
     def from_conf(cls, conf_path):
         conf = ConfigFactory.parse_file(str(conf_path))
@@ -98,7 +88,6 @@ class CoxExperimentConfig(ExperimentConfig):
             n_evals=get_conf(conf, group=cls.GROUP, key="n_evals", default=50),
             n_bootstraps=get_conf(conf, group=cls.GROUP, key="n_bootstraps", default=100),
             n_folds=get_conf(conf, group=cls.GROUP, key="n_folds", default=6),
-            penalty_exp=get_conf(conf, group=cls.GROUP, key="penalty_exp", default=[-2, 1]),
             search_method=get_conf(conf, group=cls.GROUP, key="search_method", default="particle swarm")
         )
 
