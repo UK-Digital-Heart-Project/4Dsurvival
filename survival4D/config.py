@@ -27,6 +27,8 @@ class BaseConfig:
 
 
 class ExperimentConfig(BaseConfig):
+    GROUP = "experiment"
+
     def __init__(self, data_path: Path, output_dir: Path, n_evals: int, n_bootstraps: int, n_folds: int,
                  search_method: str):
         self.data_path = data_path
@@ -38,8 +40,6 @@ class ExperimentConfig(BaseConfig):
 
 
 class NNExperimentConfig(ExperimentConfig):
-    GROUP = "experiment"
-
     def __init__(
             self, data_path: Path, output_dir: Path, n_evals: int, n_bootstraps: int, n_folds: int, search_method: str,
             batch_size: int, n_epochs: int, backend: str
