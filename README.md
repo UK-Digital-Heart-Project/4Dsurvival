@@ -13,7 +13,7 @@ The files in this repository are organized into 3 directories:
         * Default configuration used to cox reg model - [demo/scripts/default_cox.conf](demo/scripts/default_cox.conf)
         * Generation of Kaplan-Meier plots - [demo/scripts/demo_KMplot.py](demo/scripts/demo_KMplot.py)
         * statistical comparison of model performance - [demo/scripts/demo_modelcomp_pvalue.py](demo/scripts/demo_modelcomp_pvalue.py)
-        * Bootstrap internal validation - [demo/scripts/demo_validate.py](demo/scripts/demo_validate.py)
+        * Bootstrap internal validation - [demo/scripts/demo_validate.py](demo/scripts/bootstrap_cox.py)
     * [demo/notebooks](demo/notebooks): contains ipython notebooks for demoing the above scripts.
 * [data](data) : contains simulated data on which functions from the `demo` directory can be run.
 
