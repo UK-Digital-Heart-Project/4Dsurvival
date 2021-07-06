@@ -52,6 +52,8 @@ def main():
         c3 = pickle.load(f)
     x_full = c3[0]
     y_full = c3[1]
+    print(x_full.shape, y_full.shape)
+
     del c3
 
     # Initialize lists to store predictions

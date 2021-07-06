@@ -26,6 +26,8 @@ class TorchModel(torch.nn.Module):
 class BaselineAutoencoder(TorchModel):
     def __init__(self, input_shape: int, dropout: float, num_ae_units1: int, num_ae_units2: int):
         super().__init__()
+        num_ae_units1 = round(num_ae_units1)
+        num_ae_units2 = round(num_ae_units2)
         self.encoder = torch.nn.Sequential(
             torch.nn.Dropout(dropout),
             torch.nn.Linear(input_shape, num_ae_units1),
@@ -51,6 +53,8 @@ class BaselineAutoencoder(TorchModel):
 class BaselineBNAutoencoder(TorchModel):
     def __init__(self, input_shape: int, dropout: float, num_ae_units1: int, num_ae_units2: int):
         super().__init__()
+        num_ae_units1 = round(num_ae_units1)
+        num_ae_units2 = round(num_ae_units2)
         self.encoder = torch.nn.Sequential(
             torch.nn.Dropout(dropout),
             torch.nn.Linear(input_shape, num_ae_units1),
