@@ -52,7 +52,6 @@ def main():
         c3 = pickle.load(f)
     x_full = c3[0]
     y_full = c3[1]
-    print(x_full.shape, y_full.shape)
     del c3
 
     # Initialize lists to store predictions
@@ -62,7 +61,6 @@ def main():
     kf = KFold(n_splits=exp_config.n_folds)
     i = 0
     for train_indices, test_indices in kf.split(x_full):
-        print(train_indices.shape, test_indices.shape)
 
         x_train, y_train = x_full[train_indices], y_full[train_indices]
         x_val, y_val = x_full[test_indices], y_full[test_indices]
