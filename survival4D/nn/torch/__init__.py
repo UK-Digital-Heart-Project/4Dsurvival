@@ -22,7 +22,7 @@ def negative_log_likelihood(E, risk):
     return neg_likelihood
 
 
-def train_nn(xtr, ytr, batch_size, n_epochs, model_name, lr_exp, alpha, **model_kwargs):
+def train_nn(xtr, ytr, batch_size, n_epochs, model_name, lr_exp, alpha, weight_decay_exp, **model_kwargs):
     """
     Data preparation: create X, E and TM where X=input vector, E=censoring status and T=survival time.
     Apply formatting (X and T as 'float32', E as 'int32')
@@ -45,7 +45,7 @@ def train_nn(xtr, ytr, batch_size, n_epochs, model_name, lr_exp, alpha, **model_
 
     model.cuda()
     # Model compilation
-    optimizer = torch.optim.Adam(model.parameters(), lr=10**lr_exp)
+    optimizer = torch.optim.Adam(model.parameters(), lr=10**lr_exp, weight_decay=10**weight_decay_exp)
     loss_mse = torch.nn.MSELoss()
 
     for n in range(n_epochs):
