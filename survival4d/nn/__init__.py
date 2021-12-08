@@ -45,9 +45,9 @@ def hypersearch_nn(x_data, y_data, method, nfolds, nevals, batch_size, num_epoch
 
 def train_nn(backend: str, xtr, ytr, batch_size, n_epochs, model_name, lr_exp, alpha, weight_decay_exp, **model_kwargs):
     if backend == "tf":
-        from survival4D.nn.tf import train_nn
+        from survival4d.nn.tf import train_nn as func
     elif backend == "torch":
-        from survival4D.nn.torch import train_nn
+        from survival4d.nn.torch import train_nn as func
     else:
         raise ValueError("Backend {} not supported. Only tf or torch. ".format(backend))
-    return train_nn(xtr, ytr, batch_size, n_epochs, model_name, lr_exp, alpha, weight_decay_exp, **model_kwargs)
+    return func(xtr, ytr, batch_size, n_epochs, model_name, lr_exp, alpha, weight_decay_exp, **model_kwargs)

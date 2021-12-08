@@ -84,6 +84,45 @@ class BaselineBNAutoencoder(TorchModel):
         decoded = self.decoder(encoded)
         return decoded, risk_pred
 
+class BaselineBNAutoencoder2(TorchModel):
+    def __init__(self, input_shape: int, dropout: float, num_ae_units1: int, num_ae_units2: int):
+        super().__init__()
+        num_ae_units1 = round(num_ae_units1)
+        num_ae_units2 = round(num_ae_units2)
+        self.encoder = torch.nn.Sequential(
+            torch.nn.Linear(input_shape, num_ae_units1),
+            torch.nn.ReLU(),
+            torch.nn.BatchNorm1d(num_ae_units1),
+            torch.nn.Dropout(dropout),
+
+            torch.nn.Linear(num_ae_units1, num_ae_units2),
+            torch.nn.BatchNorm1d(num_ae_units2),
+            torch.nn.ReLU(),
+            torch.nn.Dropout(dropout),
+            torch.nn.Linear(num_ae_units2, num_ae_units2),
+        )
+
+        self.decoder = torch.nn.Sequential(
+            torch.nn.Linear(num_ae_units2, num_ae_units1),
+            torch.nn.ReLU(),
+            torch.nn.BatchNorm1d(num_ae_units1),
+            torch.nn.Dropout(dropout),
+            torch.nn.Linear(num_ae_units1, input_shape)
+        )
+        self.risk_regressor = torch.nn.Sequential(
+            torch.nn.Linear(num_ae_units2, num_ae_units2//2),
+            torch.nn.ReLU(),
+            torch.nn.BatchNorm1d(num_ae_units2//2),
+            torch.nn.Dropout(dropout),
+            torch.nn.Linear(num_ae_units2//2, 1)
+        )
+
+    def forward(self, x):
+        encoded = self.encoder(x)
+        risk_pred = self.risk_regressor(encoded)
+        decoded = self.decoder(encoded)
+        return decoded, risk_pred
+
 
 def model_factory(model_name: str, **kwargs) -> TorchModel:
     # Before defining network architecture, clear current computation graph (if one exists)
@@ -92,6 +131,8 @@ def model_factory(model_name: str, **kwargs) -> TorchModel:
         model = BaselineAutoencoder(**kwargs)
     elif model_name == "baseline_bn_autoencoder":
         model = BaselineBNAutoencoder(**kwargs)
+    elif model_name == "baseline_bn_autoencoder_2":
+        model = BaselineBNAutoencoder2(**kwargs)
     else:
         raise ValueError("Model name {} has not been implemented.".format(model_name))
     return model

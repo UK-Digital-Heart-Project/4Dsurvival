@@ -1,8 +1,8 @@
 import numpy as np
 import torch
 
-from survival4D.nn.torch.models import model_factory
-from survival4D.nn import prepare_data, sort4minibatches
+from survival4d.nn.torch.models import model_factory
+from survival4d.nn import prepare_data, sort4minibatches
 from torch.utils.data import TensorDataset, DataLoader
 from tqdm import tqdm
 
@@ -18,7 +18,7 @@ def negative_log_likelihood(E, risk):
     log_risk = torch.log(torch.cumsum(hazard_ratio, dim=0))
     uncensored_likelihood = risk - log_risk
     censored_likelihood = uncensored_likelihood * E
-    neg_likelihood = -torch.sum(censored_likelihood)
+    neg_likelihood = -torch.mean(censored_likelihood)
     return neg_likelihood
 
 
@@ -41,7 +41,7 @@ def train_nn(xtr, ytr, batch_size, n_epochs, model_name, lr_exp, alpha, weight_d
     model = model_factory(model_name, **model_kwargs)
 
     dataset = TensorDataset(torch.from_numpy(X_tr).cuda(), torch.from_numpy(E_tr).cuda(), torch.from_numpy(TM_tr).cuda())
-    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
+    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False, drop_last=True)
 
     model.cuda()
     # Model compilation
@@ -52,18 +52,26 @@ def train_nn(xtr, ytr, batch_size, n_epochs, model_name, lr_exp, alpha, weight_d
         loss_ac = 0
         loss_mse_ac = 0
         loss_neg_log_ac = 0
+        npoints = 0
         pbar = tqdm(enumerate(dataloader))
         for idx, (x, e, t) in pbar:
             decoded, risk_pred = model(x)
             mse_loss = loss_mse(x, decoded)
             neg_log = negative_log_likelihood(e, risk_pred)
             loss = mse_loss * alpha + (1 - alpha) * neg_log
+
             optimizer.zero_grad()
-            loss.backward()
+            loss_corrected = loss
+            actual_batch_size = x.shape[1]
+            if actual_batch_size != batch_size:
+                loss_corrected = loss_corrected * actual_batch_size / batch_size
+            loss_corrected.backward()
             optimizer.step()
-            loss_ac += loss.item() / batch_size
-            loss_mse_ac += mse_loss.item() / batch_size
-            loss_neg_log_ac += neg_log.item() / batch_size
+
+            loss_ac = loss.item() * actual_batch_size + npoints * loss_ac
+            loss_mse_ac = mse_loss.item() * actual_batch_size + npoints * loss_mse_ac
+            loss_neg_log_ac = neg_log.item() * actual_batch_size + npoints * loss_neg_log_ac
+            npoints += actual_batch_size
             pbar.set_description(
                 'Epoch [{epoch}/{epochs}] :: Loss {loss:.4f}, MSE loss {mse_loss:.4f}, Neg Log {neg_log:.4f}'.format(
                     epoch=n + 1,
