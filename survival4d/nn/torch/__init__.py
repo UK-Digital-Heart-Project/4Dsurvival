@@ -1,9 +1,9 @@
 import numpy as np
 import torch
 
-from survival4D.nn.torch.models import model_factory
-from survival4D.nn import prepare_data, sort4minibatches
-from torch.utils.data import TensorDataset, DataLoader, RandomSampler
+from survival4d.nn.torch.models import model_factory
+from survival4d.nn import prepare_data, sort4minibatches
+from torch.utils.data import TensorDataset, DataLoader, RandomSampler, BatchSampler
 from tqdm import tqdm
 
 
@@ -31,7 +31,10 @@ def train_nn(xtr, ytr, batch_size, n_epochs, model_name, lr_exp, alpha, weight_d
 
     # Arrange data into minibatches (based on specified batch size), and within each minibatch,
     # sort in descending order of survival/censoring time (see explanation of Cox PH loss function definition)
-    # X_tr, E_tr, TM_tr, _ = sort4minibatches(X_tr, E_tr, TM_tr, batch_size)
+    sort_idx = torch.argsort(torch.as_tensor(TM_tr), descending=True, dim=0)
+    TM_tr = TM_tr[sort_idx]
+    X_tr = X_tr[sort_idx, :]
+    E_tr = E_tr[sort_idx, :]
 
     # specify input dimensionality
     inpshape = xtr.shape[1]
@@ -41,7 +44,14 @@ def train_nn(xtr, ytr, batch_size, n_epochs, model_name, lr_exp, alpha, weight_d
     model = model_factory(model_name, **model_kwargs)
 
     dataset = TensorDataset(torch.from_numpy(X_tr).cuda(), torch.from_numpy(E_tr).cuda(), torch.from_numpy(TM_tr).cuda())
-    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+
+    class CustomBatchSampler(BatchSampler):
+        def __iter__(self):
+            for res in super().__iter__():
+                yield sorted(res)
+    batch_sampler = CustomBatchSampler(RandomSampler(dataset), batch_size=batch_size, drop_last=False)
+
+    dataloader = DataLoader(dataset, batch_sampler=batch_sampler)
 
     model.cuda()
     # Model compilation
@@ -56,9 +66,6 @@ def train_nn(xtr, ytr, batch_size, n_epochs, model_name, lr_exp, alpha, weight_d
         pbar = tqdm(enumerate(dataloader))
         for idx, (x, e, t) in pbar:
             # sort x (B, 11514), e (B, 1), t (B,) according to t
-            sort_idx = torch.argsort(t, descending=True, dim=0)
-            x = x[sort_idx, :]
-            e = e[sort_idx, :]
             decoded, risk_pred = model(x)
             mse_loss = loss_mse(x, decoded)
             neg_log = negative_log_likelihood(e, risk_pred)
