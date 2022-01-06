@@ -11,7 +11,7 @@ def sort4minibatches(xvals, evals, tvals, batchsize):
     ntot = len(xvals)
     indices = np.arange(ntot)
     np.random.shuffle(indices)
-    start_idx=0
+    start_idx = 0
     esall = []
     for end_idx in list(range(batchsize, batchsize*(ntot//batchsize)+1, batchsize))+[ntot]:
         excerpt = indices[start_idx:end_idx]
