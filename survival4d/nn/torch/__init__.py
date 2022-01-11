@@ -22,11 +22,14 @@ def negative_log_likelihood(E, risk):
     return neg_likelihood
 
 
-def train_nn(xtr, ytr, batch_size, n_epochs, model_name, lr_exp, alpha, weight_decay_exp, **model_kwargs):
+def train_nn(xtr, ytr, batch_size, n_epochs, model_name, lr_exp, alpha, weight_decay_exp, xtr_cp=None, **model_kwargs):
     """
     Data preparation: create X, E and TM where X=input vector, E=censoring status and T=survival time.
     Apply formatting (X and T as 'float32', E as 'int32')
     """
+    assert (model_name == 'baseline_bn_autoencoder_with_cp') ^ (xtr_cp is None)
+
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     X_tr, E_tr, TM_tr = prepare_data(xtr, ytr[:, 0, np.newaxis], ytr[:, 1])
 
     # Arrange data into minibatches (based on specified batch size), and within each minibatch,
@@ -35,6 +38,9 @@ def train_nn(xtr, ytr, batch_size, n_epochs, model_name, lr_exp, alpha, weight_d
     TM_tr = TM_tr[sort_idx]
     X_tr = X_tr[sort_idx, :]
     E_tr = E_tr[sort_idx, :]
+    if xtr_cp is not None:
+        xtr_cp = xtr_cp.astype("float32")
+        xtr_cp = xtr_cp[sort_idx, :]
 
     # specify input dimensionality
     inpshape = xtr.shape[1]
@@ -43,7 +49,10 @@ def train_nn(xtr, ytr, batch_size, n_epochs, model_name, lr_exp, alpha, weight_d
     model_kwargs["input_shape"] = inpshape
     model = model_factory(model_name, **model_kwargs)
 
-    dataset = TensorDataset(torch.from_numpy(X_tr).cuda(), torch.from_numpy(E_tr).cuda(), torch.from_numpy(TM_tr).cuda())
+    dataset = [torch.from_numpy(X_tr).to(device), torch.from_numpy(E_tr).to(device), torch.from_numpy(TM_tr).to(device)]
+    if xtr_cp is not None:
+        dataset.append(torch.from_numpy(xtr_cp).to(device))
+    dataset = TensorDataset(*dataset)
 
     class CustomBatchSampler(BatchSampler):
         def __iter__(self):
@@ -53,7 +62,7 @@ def train_nn(xtr, ytr, batch_size, n_epochs, model_name, lr_exp, alpha, weight_d
 
     dataloader = DataLoader(dataset, batch_sampler=batch_sampler)
 
-    model.cuda()
+    model.to(device)
     # Model compilation
     optimizer = torch.optim.Adam(model.parameters(), lr=10**lr_exp, weight_decay=10**weight_decay_exp)
     loss_mse = torch.nn.MSELoss()
@@ -64,9 +73,13 @@ def train_nn(xtr, ytr, batch_size, n_epochs, model_name, lr_exp, alpha, weight_d
         loss_neg_log_ac = 0
         npoints = 0
         pbar = tqdm(enumerate(dataloader))
-        for idx, (x, e, t) in pbar:
-            # sort x (B, 11514), e (B, 1), t (B,) according to t
-            decoded, risk_pred = model(x)
+        for idx, batch in pbar:
+            if xtr_cp is None:
+                x, e, t = batch
+                decoded, risk_pred = model(x)
+            else:
+                x, e, t, x_cp = batch
+                decoded, risk_pred = model(x, x_cp)
             mse_loss = loss_mse(x, decoded)
             neg_log = negative_log_likelihood(e, risk_pred)
             loss = mse_loss * alpha + (1 - alpha) * neg_log
