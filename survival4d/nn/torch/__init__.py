@@ -29,7 +29,7 @@ def train_nn(xtr, ytr, batch_size, n_epochs, model_name, lr_exp, alpha, weight_d
     """
     assert (model_name == 'baseline_bn_autoencoder_with_cp') ^ (xtr_cp is None)
 
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    device = torch.device(f"cuda:{np.random.randint(torch.cuda.device_count())}" if torch.cuda.is_available() else "cpu")
     X_tr, E_tr, TM_tr = prepare_data(xtr, ytr[:, 0, np.newaxis], ytr[:, 1])
 
     # Arrange data into minibatches (based on specified batch size), and within each minibatch,

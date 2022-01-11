@@ -3,11 +3,10 @@ import numpy as np
 import torch
 from torch.utils.data import TensorDataset, DataLoader
 
-
 class TorchModel(torch.nn.Module):
     def predict(self, x: np.ndarray, x_cp: np.ndarray = None,
         batch_size: int = 1) -> Tuple[np.ndarray, np.ndarray]:
-        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        device = next(iter(self.parameters())).device
         x = torch.from_numpy(x).to(device).float()
         dataset = [x]
         if x_cp is not None:
