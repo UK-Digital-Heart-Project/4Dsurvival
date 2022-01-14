@@ -1,11 +1,15 @@
 import numpy as np
 import torch
+import os
 
 from survival4d.nn.torch.models import model_factory
 from survival4d.nn import prepare_data, sort4minibatches
 from torch.utils.data import TensorDataset, DataLoader, RandomSampler, BatchSampler
 from tqdm import tqdm
 
+cuda_dev_id = np.random.default_rng(os.getpid()).random()
+cuda_dev_id *= torch.cuda.device_count()-1
+cuda_dev_id = int(np.round(cuda_dev_id))
 
 def negative_log_likelihood(E, risk):
     """
@@ -29,7 +33,7 @@ def train_nn(xtr, ytr, batch_size, n_epochs, model_name, lr_exp, alpha, weight_d
     """
     assert (model_name == 'baseline_bn_autoencoder_with_cp') ^ (xtr_cp is None)
 
-    device = torch.device(f"cuda:{np.random.randint(torch.cuda.device_count())}" if torch.cuda.is_available() else "cpu")
+    device = torch.device(f"cuda:{cuda_dev_id}" if torch.cuda.is_available() else "cpu")
     X_tr, E_tr, TM_tr = prepare_data(xtr, ytr[:, 0, np.newaxis], ytr[:, 1])
 
     # Arrange data into minibatches (based on specified batch size), and within each minibatch,
@@ -58,7 +62,7 @@ def train_nn(xtr, ytr, batch_size, n_epochs, model_name, lr_exp, alpha, weight_d
         def __iter__(self):
             for res in super().__iter__():
                 yield sorted(res)
-    batch_sampler = CustomBatchSampler(RandomSampler(dataset), batch_size=batch_size, drop_last=False)
+    batch_sampler = CustomBatchSampler(RandomSampler(dataset), batch_size=batch_size, drop_last=True)
 
     dataloader = DataLoader(dataset, batch_sampler=batch_sampler)
 
@@ -71,7 +75,6 @@ def train_nn(xtr, ytr, batch_size, n_epochs, model_name, lr_exp, alpha, weight_d
         loss_ac = 0
         loss_mse_ac = 0
         loss_neg_log_ac = 0
-        npoints = 0
         pbar = tqdm(enumerate(dataloader))
         for idx, batch in pbar:
             if xtr_cp is None:
@@ -85,17 +88,12 @@ def train_nn(xtr, ytr, batch_size, n_epochs, model_name, lr_exp, alpha, weight_d
             loss = mse_loss * alpha + (1 - alpha) * neg_log
 
             optimizer.zero_grad()
-            loss_corrected = loss
-            actual_batch_size = x.shape[1]
-            if actual_batch_size != batch_size:
-                loss_corrected = loss_corrected * actual_batch_size / batch_size
-            loss_corrected.backward()
+            loss.backward()
             optimizer.step()
 
-            loss_ac = loss.item() * actual_batch_size + npoints * loss_ac
-            loss_mse_ac = mse_loss.item() * actual_batch_size + npoints * loss_mse_ac
-            loss_neg_log_ac = neg_log.item() * actual_batch_size + npoints * loss_neg_log_ac
-            npoints += actual_batch_size
+            loss_ac += loss.item()
+            loss_mse_ac += mse_loss.item()
+            loss_neg_log_ac += neg_log.item()
             pbar.set_description(
                 'Epoch [{epoch}/{epochs}] :: Loss {loss:.4f}, MSE loss {mse_loss:.4f}, Neg Log {neg_log:.4f}'.format(
                     epoch=n + 1,
