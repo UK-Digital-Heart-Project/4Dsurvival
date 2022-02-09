@@ -106,8 +106,8 @@ class BaselineBNAutoencoderMC(TorchModel):
             torch.nn.Dropout(dropout),
 
             torch.nn.Linear(num_ae_units1, num_ae_units2),
-            torch.nn.BatchNorm1d(num_ae_units2),
             torch.nn.ELU(),
+            torch.nn.BatchNorm1d(num_ae_units2),
             torch.nn.Dropout(dropout),
             torch.nn.Linear(num_ae_units2, num_ae_units2),
         )
@@ -146,8 +146,8 @@ class BaselineBNAutoencoderWithCP(TorchModel):
             torch.nn.Dropout(dropout),
 
             torch.nn.Linear(num_ae_units1, num_ae_units2),
-            torch.nn.BatchNorm1d(num_ae_units2),
             torch.nn.ELU(),
+            torch.nn.BatchNorm1d(num_ae_units2),
             torch.nn.Dropout(dropout),
             torch.nn.Linear(num_ae_units2, num_ae_units2),
         )
