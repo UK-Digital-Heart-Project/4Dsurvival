@@ -8,7 +8,6 @@ from torch.utils.data import TensorDataset, DataLoader, RandomSampler, BatchSamp
 from lifelines.utils import concordance_index
 from tqdm import tqdm
 
-import itertools
 from copy import deepcopy
 
 cuda_dev_id = np.random.default_rng(os.getpid()).random()
@@ -65,10 +64,8 @@ def train_nn_torch(xtr, ytr, batch_size, n_epochs, model_name, lr_exp, alpha, we
         dataset.append(torch.from_numpy(xtr_cp).to(device))
     dataset = TensorDataset(*dataset)
 
-    epoch_iterator = range(n_epochs)
     # early stopping configuration
     if xtr_eval is not None:
-        epoch_iterator = itertools.count()
         model.best_cindex_val = -np.inf
         model.loss_history_validation = []
         es_tries = 0
@@ -101,7 +98,7 @@ def train_nn_torch(xtr, ytr, batch_size, n_epochs, model_name, lr_exp, alpha, we
     optimizer = torch.optim.Adam(model.parameters(), lr=10**lr_exp, weight_decay=10**weight_decay_exp)
     loss_mse = torch.nn.MSELoss()
 
-    for n in epoch_iterator:
+    for n in range(n_epochs):
         model.train()
         loss_ac = 0
         loss_mse_ac = 0
