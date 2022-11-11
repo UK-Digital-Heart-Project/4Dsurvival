@@ -1,4 +1,4 @@
-import optunity
+#import optunity
 import numpy as np
 from lifelines.utils import concordance_index
 
@@ -43,11 +43,11 @@ def hypersearch_nn(x_data, y_data, method, nfolds, nevals, batch_size, num_epoch
     return optimal_pars, searchlog
 
 
-def train_nn(backend: str, xtr, ytr, batch_size, n_epochs, model_name, lr_exp, alpha, weight_decay_exp, **kwargs):
+def train_nn(backend: str, xtr, ytr, batch_size, n_epochs, model_name, lr_exp, alpha, weight_decay_exp, cph_loss_penalizer, **kwargs):
     if backend == "tf":
         from survival4d.nn.tf import train_nn
     elif backend == "torch":
         from survival4d.nn.torch import train_nn_torch as train_nn
     else:
         raise ValueError("Backend {} not supported. Only tf or torch. ".format(backend))
-    return train_nn(xtr, ytr, batch_size, n_epochs, model_name, lr_exp, alpha, weight_decay_exp, **kwargs)
+    return train_nn(xtr, ytr, batch_size, n_epochs, model_name, lr_exp, alpha, weight_decay_exp, cph_loss_penalizer, **kwargs)
