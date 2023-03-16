@@ -2,7 +2,7 @@ from setuptools import setup, find_namespace_packages
 
 
 setup(
-    name="4Dsurvival",
+    name="survival4d",
     use_scm_version=True,
     author="Declan Oregan",
     author_email="declan.oregan@lms.mrc.ac.uk",
